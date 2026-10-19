@@ -162,7 +162,8 @@ async function sendDueEmails(env, delayHours) {
       headers: {
         authorization: `Bearer ${env.RESEND_API_KEY}`,
         'content-type': 'application/json',
-        'idempotency-key': `being-made-${row.id}`
+        // One key per order per hour: stops double sends inside a run, but a failed send can retry next hour.
+        'idempotency-key': `being-made-${row.id}-${new Date().toISOString().slice(0, 13)}`
       },
       body: JSON.stringify({ from: env.MAIL_FROM, to: [row.email], reply_to: env.MAIL_REPLY_TO, subject: mail.subject, html: mail.html, text: mail.text })
     });
