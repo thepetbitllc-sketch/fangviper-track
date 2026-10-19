@@ -4,6 +4,8 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
   "assets": { "directory": "./public" },
+  // Keeps request logs (webhooks, email job) in the Cloudflare dashboard under Workers > fangviper-track > Logs.
+  "observability": { "enabled": true },
   "d1_databases": [
     { "binding": "DB", "database_name": "fangviper-track", "database_id": "bca55b70-0586-4b7a-87b8-abe718189db5" }
   ],

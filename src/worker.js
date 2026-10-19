@@ -48,6 +48,7 @@ async function getOrder(token, env) {
 async function shopifyWebhook(request, env, ctx) {
   const body = await request.arrayBuffer();
   if (!(await verifyShopify(body, request.headers.get('x-shopify-hmac-sha256'), env.SHOPIFY_WEBHOOK_SECRET))) {
+    console.warn('webhook rejected: bad signature', request.headers.get('x-shopify-topic'));
     return new Response('Unauthorized', { status: 401 });
   }
   const topic = request.headers.get('x-shopify-topic');
@@ -57,6 +58,7 @@ async function shopifyWebhook(request, env, ctx) {
   else if (topic === 'fulfillments/create' || topic === 'fulfillments/update') await markShipped(data, env);
   else if (topic === 'orders/cancelled') await env.DB.prepare("UPDATE orders SET status = 'canceled' WHERE id = ?").bind(String(data.id)).run();
 
+  console.log('webhook', topic, data.name || data.order_id || data.id);
   return new Response('ok');
 }
 

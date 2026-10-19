@@ -48,13 +48,30 @@ Nothing here changes products, prices or orders in Shopify. The backend only rec
 6. **DNS for the page**: at Spaceship add CNAME `track` -> `thepetbitllc-sketch.github.io`
    (same as `links` and `size`).
 
-## Claude does
+## Live setup (done 2026-10-19)
 
-- Puts the `database_id` and the workers.dev address in place (`wrangler.jsonc`, the
-  `api-base` tag in `public/index.html`).
-- Creates the GitHub repo and turns on Pages for track.fangviper.com, with HTTPS.
-- Test with a real order: place a test order, check that the page link works, and send the email.
+- Backend: https://fangviper-track.fangviper-track.workers.dev (Cloudflare account thepetbitllc@gmail.com)
+- Shopify webhook URL: `https://fangviper-track.fangviper-track.workers.dev/webhooks/shopify`
+- Database: D1 `fangviper-track`
+- Page: GitHub repo `thepetbitllc-sketch/fangviper-track`, served by GitHub Pages from branch
+  `gh-pages` at https://track.fangviper.com (Spaceship CNAME `track` -> `thepetbitllc-sketch.github.io`)
+- Secrets saved: `RESEND_API_KEY`, `SHOPIFY_WEBHOOK_SECRET`
+- Logs: Cloudflare dashboard > Workers > fangviper-track > Logs, or `npx wrangler tail`.
+  Each webhook logs `webhook <topic> <order>`; a wrong signing key logs `webhook rejected`.
 
+Quick check after changing webhooks: on Shopify's webhooks page use **Send test notification**.
+It should appear in the logs as `webhook orders/create`. Shopify's sample order is years old,
+so it never gets an email.
+
+## Updating the page
+
+Edit files in `public/`, commit, then publish both copies:
+```
+git subtree split --prefix public -b gh-pages
+git push origin gh-pages main
+npx wrangler deploy
+```
+(If `subtree split` refuses because `gh-pages` exists, delete it first: `git branch -D gh-pages`.)
 ## Day-to-day
 
 - Email delay: `EMAIL_DELAY_HOURS` in `wrangler.jsonc` (24). Orders older than 7 days, shipped
