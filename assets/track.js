@@ -89,11 +89,9 @@
       return row;
     }));
 
-    $('changeNote').textContent = stage === 0
-      ? 'Need a different size or a new address? Message us today. The earlier we hear from you, the better the chance we can still change it.'
-      : stage === 5
-        ? 'Your order has already shipped, so the address can not change anymore. Questions about the delivery? We are here.'
-        : 'Your piece is already being made, so the size and address can not change anymore. For anything else, we are here.';
+    $('changeNote').textContent = stage === 5
+      ? 'Questions about the delivery? Message us and we will help you out.'
+      : 'Something wrong with your order? Message us and we will sort it out.';
 
     const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / DAY);
     $('tip').textContent = TIPS[doy % TIPS.length];
