@@ -1,0 +1,179 @@
+﻿/* Fangviper order tracking. Matches fangviper.com: pure black, white type, Bebas Neue + Montserrat, lots of space. */
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --mute: #9a9a9a;
+  --dim: #5e5e5e;
+  --hair: rgba(255, 255, 255, .14);
+  --display: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
+  --body: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gutter: clamp(16px, 3vw, 40px);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.6 var(--body); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+img { display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
+::selection { background: #fff; color: #000; }
+:focus-visible { outline: 1px solid #fff; outline-offset: 4px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: .01em; line-height: 1; }
+[hidden] { display: none !important; }
+
+/* header (same layout as the store) */
+.header {
+  position: sticky; top: 0; z-index: 10; height: 66px; background: #000;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 var(--gutter);
+}
+.header__logo img { width: 26px; height: auto; }
+.header__nav { display: flex; gap: 28px; }
+.header__nav a, .header__mobile a { font: 400 18px/1 var(--display); letter-spacing: .02em; color: rgba(255, 255, 255, .78); transition: color .2s; }
+.header__nav a:hover, .header__mobile a:hover { color: #fff; }
+.header__mobile { display: none; justify-self: end; gap: 18px; }
+
+.page { padding: 0 var(--gutter); max-width: 1120px; margin: 0 auto; }
+.small-label { font: 500 11px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+
+/* hero: stage title, scene, copy */
+.hero { padding: clamp(28px, 6vh, 56px) 0 0; text-align: center; }
+.hero__meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 18px; }
+.hero h1 { font-size: clamp(52px, 8vw, 96px); margin-top: 18px; }
+.hero__day { margin-top: 10px; font: 400 20px/1 var(--display); letter-spacing: .04em; color: var(--mute); }
+.scene { width: 100%; max-width: 560px; margin: clamp(20px, 4vh, 40px) auto 0; aspect-ratio: 400 / 240; }
+.scene svg { width: 100%; height: 100%; overflow: visible; }
+.hero__copy { max-width: 480px; margin: clamp(16px, 3vh, 28px) auto 0; color: var(--mute); font-size: 15px; }
+
+/* progress */
+.steps { list-style: none; display: grid; grid-template-columns: repeat(6, 1fr); margin-top: clamp(48px, 8vh, 80px); border-top: 1px solid var(--hair); }
+.steps li { position: relative; padding: 18px 4px 0; text-align: center; font: 400 18px/1 var(--display); letter-spacing: .04em; color: var(--dim); }
+.steps li::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; height: 1px; background: transparent; }
+.steps li.done { color: var(--mute); }
+.steps li.done::before { background: var(--mute); }
+.steps li.now { color: var(--fg); }
+.steps li.now::before { background: var(--fg); height: 2px; top: -1px; }
+
+/* status line + tracking */
+.status { margin-top: clamp(40px, 7vh, 64px); display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+.status__big { font: 400 clamp(30px, 4vw, 40px)/1 var(--display); letter-spacing: .02em; }
+.status__sub { color: var(--mute); margin-top: -10px; }
+
+/* pill button, same as the store */
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  padding: 16px 24px; border: 1px solid #fff; border-radius: 100px;
+  font: 400 14px/1 var(--body); text-transform: uppercase; color: #fff; background: #000;
+  transition: background .25s, color .25s;
+}
+.pill:hover { background: #fff; color: #000; }
+
+/* blocks */
+.block { margin-top: clamp(72px, 12vh, 120px); }
+.block > h2, .two h2 { font-size: 32px; margin-bottom: 18px; }
+.rows { border-top: 1px solid var(--hair); }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--hair); }
+.row--img { grid-template-columns: 56px 1fr auto; }
+.row img { width: 56px; height: 56px; object-fit: cover; }
+.row__name { font: 500 14px/1.3 var(--body); }
+.row__hint { display: block; font-weight: 400; font-size: 12.5px; color: var(--mute); margin-top: 3px; }
+.row__v { font: 400 22px/1 var(--display); letter-spacing: .03em; color: var(--mute); white-space: nowrap; }
+a.row:hover .row__v { color: var(--fg); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(56px, 6vw, 88px); }
+.note { color: var(--mute); max-width: 460px; }
+.note + .pill { margin-top: 24px; }
+.tip { font: 400 clamp(30px, 3.4vw, 42px)/1.05 var(--display); letter-spacing: .01em; max-width: 720px; }
+.tip + .small-label { display: block; margin-top: 16px; }
+
+.footer { padding: 96px var(--gutter) calc(32px + env(safe-area-inset-bottom)); text-align: center; font-size: 12px; color: var(--dim); }
+
+/* demo switcher (sample data only) */
+.demo { position: sticky; bottom: 0; z-index: 10; background: #000; border-top: 1px solid var(--hair); padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; justify-content: center; }
+.demo button { font: 500 11px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 6px 0; border-bottom: 1px solid transparent; }
+.demo button:hover { color: var(--fg); }
+.demo button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+
+.err { padding: 120px 0; text-align: center; }
+.err h1 { font-size: clamp(44px, 6vw, 72px); }
+.err p { color: var(--mute); margin: 14px auto 28px; max-width: 420px; }
+
+@media (max-width: 900px) {
+  .header__nav { display: none; }
+  .header { grid-template-columns: 1fr auto; }
+  .header__mobile { display: flex; }
+  .two { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .steps li { font-size: 0; padding-top: 14px; }
+  .steps li.now { font-size: 15px; white-space: nowrap; overflow: visible; }
+}
+
+/* ---------- scenes: white line art on black ---------- */
+.ln { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ln-dim { fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.solid { fill: #000; stroke: #fff; stroke-width: 2; stroke-linejoin: round; }
+.ink { fill: #fff; }
+.fb { transform-box: fill-box; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 1 artwork: design draws itself, file loads */
+  .s-art .draw { stroke-dasharray: 120; animation: draw 3.2s ease-in-out infinite; }
+  .s-art .cursor { animation: cursor 3.2s ease-in-out infinite; }
+  .s-art .load { transform-origin: left center; animation: load 3.2s ease-in-out infinite; }
+
+  /* 2 press: head sweeps down, print appears under it */
+  .s-press .head { animation: head 4s ease-in-out infinite; }
+  .s-press .shuttle { animation: shuttle .5s ease-in-out infinite alternate; }
+  .s-press .cover { transform-origin: center bottom; animation: reveal 4s ease-in-out infinite; }
+
+  /* 3 cure: plate presses, heat rises, timer runs */
+  .s-cure .plate { animation: press 4s ease-in-out infinite; }
+  .s-cure .heat { animation: heat 4s ease-in-out infinite; }
+  .s-cure .heat.h2 { animation-delay: .25s; }
+  .s-cure .heat.h3 { animation-delay: .5s; }
+  .s-cure .hand { transform-origin: 340px 46px; animation: spin 4s linear infinite; }
+
+  /* 4 check: magnifier scans, tick draws */
+  .s-check .lens { animation: scan 4.5s ease-in-out infinite; }
+  .s-check .tick { stroke-dasharray: 60; animation: tick 4.5s ease-in-out infinite; }
+
+  /* 5 pack: shirt drops in, flaps close, tape runs */
+  .s-pack .folded { animation: drop 4.5s ease-in-out infinite; }
+  .s-pack .flap-l { transform-origin: left center; animation: flapL 4.5s ease-in-out infinite; }
+  .s-pack .flap-r { transform-origin: right center; animation: flapR 4.5s ease-in-out infinite; }
+  .s-pack .tape { stroke-dasharray: 100; animation: tape 4.5s ease-in-out infinite; }
+
+  /* 6 ship: van rolls, road moves */
+  .s-ship .road { stroke-dasharray: 18 14; animation: road .5s linear infinite; }
+  .s-ship .van { animation: bob .35s ease-in-out infinite alternate; }
+  .s-ship .wheel { transform-origin: center; animation: spin .6s linear infinite; }
+  .s-ship .speed { animation: speed .9s linear infinite; }
+  .s-ship .speed.p2 { animation-delay: .3s; }
+  .s-ship .speed.p3 { animation-delay: .6s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-press .cover, .s-art .cursor { display: none; }
+}
+
+@keyframes draw { 0% { stroke-dashoffset: 120; } 60%, 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes cursor { 0% { transform: translate(0, 0); } 60%, 85% { transform: translate(52px, 0); } 100% { transform: translate(0, 0); } }
+@keyframes load { 0% { transform: scaleX(0); } 85% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+
+@keyframes head { 0% { transform: translateY(0); } 70%, 85% { transform: translateY(46px); } 100% { transform: translateY(0); } }
+@keyframes shuttle { from { transform: translateX(0); } to { transform: translateX(112px); } }
+@keyframes reveal { 0% { transform: scaleY(1); } 70%, 92% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
+
+@keyframes press { 0%, 8% { transform: translateY(0); } 22%, 70% { transform: translateY(42px); } 86%, 100% { transform: translateY(0); } }
+@keyframes heat { 0%, 22% { opacity: 0; transform: translateY(8px); } 40% { opacity: 1; } 70% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes scan { 0% { transform: translate(0, 0); } 20% { transform: translate(60px, 10px); } 40% { transform: translate(20px, 50px); } 60% { transform: translate(70px, 70px); } 80%, 100% { transform: translate(0, 0); } }
+@keyframes tick { 0%, 62% { stroke-dashoffset: 60; } 76%, 94% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+
+@keyframes drop { 0% { transform: translateY(-70px); opacity: 0; } 8% { opacity: 1; } 30%, 92% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(0); opacity: 0; } }
+@keyframes flapL { 0%, 34% { transform: rotate(-125deg); } 52%, 94% { transform: rotate(0); } 100% { transform: rotate(-125deg); } }
+@keyframes flapR { 0%, 42% { transform: rotate(125deg); } 60%, 94% { transform: rotate(0); } 100% { transform: rotate(125deg); } }
+@keyframes tape { 0%, 62% { stroke-dashoffset: 100; } 78%, 94% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+
+@keyframes road { to { stroke-dashoffset: 32; } }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes speed { 0% { transform: translateX(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-60px); opacity: 0; } }

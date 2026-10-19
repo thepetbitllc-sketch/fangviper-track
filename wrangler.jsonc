@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fangviper-track",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./public" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "fangviper-track", "database_id": "bca55b70-0586-4b7a-87b8-abe718189db5" }
+  ],
+  // Every hour: send the "being made" email to orders that are 24h old.
+  "triggers": { "crons": ["0 * * * *"] },
+  "vars": {
+    "SITE_URL": "https://track.fangviper.com",
+    "STORE_URL": "https://fangviper.com",
+    "MAIL_FROM": "Fangviper <contact@fangviper.com>",
+    "MAIL_REPLY_TO": "contact@fangviper.com",
+    "EMAIL_DELAY_HOURS": "24"
+  }
+  // Secrets (set with `npx wrangler secret put NAME`, never in this file):
+  //   SHOPIFY_WEBHOOK_SECRET  the signing key shown under Shopify > Settings > Notifications > Webhooks
+  //   RESEND_API_KEY          from resend.com > API Keys
+}
