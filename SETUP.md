@@ -60,8 +60,8 @@ Nothing here changes products, prices or orders in Shopify. The backend only rec
   Each webhook logs `webhook <topic> <order>`; a wrong signing key logs `webhook rejected`.
 
 Quick check after changing webhooks: on Shopify's webhooks page use **Send test notification**.
-It should appear in the logs as `webhook orders/create`. Shopify's sample order is years old,
-so it never gets an email.
+It should appear in the logs as `webhook orders/create #9999` together with `skipped sample order`:
+Shopify's sample customer is @example.com, which the backend never stores or emails.
 
 ## Updating the page
 

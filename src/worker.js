@@ -78,6 +78,9 @@ async function saveOrder(o, env, ctx) {
   const items = (o.line_items || [])
     .filter((li) => li.quantity > 0 && li.requires_shipping !== false)
     .map((li) => ({ title: li.title, variant: li.variant_title || '', qty: li.quantity, productId: li.product_id, variantId: li.variant_id, image: null }));
+  const email = o.email || o.contact_email || (o.customer && o.customer.email) || null;
+  // Shopify's "Send test notification" uses a fake @example.com customer stamped with the current time.
+  if (email && /@example\.com$/i.test(email)) { console.log('skipped sample order', o.name); return; }
   const addr = o.shipping_address || o.billing_address || {};
   const id = String(o.id);
 
@@ -90,7 +93,7 @@ async function saveOrder(o, env, ctx) {
     o.name || '#' + o.order_number,
     new Date(o.created_at || Date.now()).toISOString(),
     o.created_at || null,
-    o.email || o.contact_email || (o.customer && o.customer.email) || null,
+    email,
     (o.customer && o.customer.first_name) || addr.first_name || null,
     JSON.stringify(items)
   ).run();
@@ -146,7 +149,7 @@ async function sendDueEmails(env, delayHours) {
   const tooOld = new Date(now - 7 * 24 * HOUR).toISOString(); // never email about week-old orders
   const { results } = await env.DB.prepare(
     `SELECT * FROM orders WHERE status = 'open' AND emailed_at IS NULL AND email IS NOT NULL
-     AND placed <= ? AND placed >= ? ORDER BY placed LIMIT 50`
+     AND email NOT LIKE '%@example.com' AND placed <= ? AND placed >= ? ORDER BY placed LIMIT 50`
   ).bind(due, tooOld).all();
 
   const report = { due: results.length, sent: [], failed: [], dryRun: [] };
