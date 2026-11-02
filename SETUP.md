@@ -76,6 +76,9 @@ npx wrangler deploy
 
 - Email delay: `EMAIL_DELAY_HOURS` in `wrangler.jsonc` (24). Orders older than 7 days, shipped
   or canceled orders, and orders without an email never get the email.
+- Product types: the backend tags each item as tee, bag, bottle, mug or journal (from store tags, product
+  type, title or the Printful mockup file name) and the page shows matching scenes. A new kind of product
+  falls back to a neutral outline and the word "piece"; ask Claude to add a scene set for it.
 - Failed sends retry every hour. See them with:
   `npx wrangler d1 execute fangviper-track --remote --command "SELECT number, email_error FROM orders WHERE email_error IS NOT NULL"`
 - Live logs: `npx wrangler tail`

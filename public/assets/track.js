@@ -1,17 +1,67 @@
 ﻿/* Fangviper order tracking page.
-   Real orders: /?t=<secret token> -> GET /api/order/<token> (backend comes later).
-   No token: sample order with a stage switcher, for previewing the look. */
+   Real orders: /?t=<secret token> -> GET /api/order/<token> on the Worker (see api-base in index.html).
+   Sample order (?demo, or locally): stage and product switcher for previewing the look. */
 (() => {
   const DAY = 864e5;
+  const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 
-  const STAGES = [
-    { label: 'Artwork', title: 'Artwork prepped', copy: 'Your order is in. The design file is being lined up for your size before anything touches the press.' },
-    { label: 'Printing', title: 'On the press', copy: 'Your shirt is on the platen. The print head lays the ink straight into the fabric, pass by pass.' },
-    { label: 'Curing', title: 'Heat curing', copy: 'The heat press locks the ink in, so the print holds up through the washer and every hard session after it.' },
-    { label: 'Check', title: 'Quality check', copy: 'One last look at the print and the seams before your piece moves on.' },
-    { label: 'Packed', title: 'Packed', copy: 'Folded, packed and labeled. Waiting for the courier to pick it up.' },
-    { label: 'Shipped', title: 'On its way', copy: 'It is out the door. Follow every step with the tracking link below.' }
-  ];
+  // What changes per product: the noun, step 3 (each product is finished differently) and the press/check/pack lines.
+  const KINDS = {
+    tee: {
+      noun: 'shirt',
+      step3: ['Curing', 'Heat curing', 'The heat press locks the ink in, so the print holds up through the washer and every hard session after it.'],
+      press: 'Your shirt is on the platen. The print head lays the ink straight into the fabric, pass by pass.',
+      check: 'One last look at the print and the seams before your shirt moves on.',
+      pack: 'Folded, packed and labeled. Waiting for the courier to pick it up.'
+    },
+    bag: {
+      noun: 'gym bag',
+      step3: ['Sewing', 'Cut and sewn', 'The printed panels are cut and stitched together into your bag.'],
+      press: 'Your design is being printed onto the fabric panels that will become your gym bag.',
+      check: 'One last look at the print, the seams and the zipper before your bag moves on.',
+      pack: 'Packed and labeled. Waiting for the courier to pick it up.'
+    },
+    bottle: {
+      noun: 'bottle',
+      step3: ['Setting', 'Setting the print', 'The print is left to set, so it holds up to everyday use.'],
+      press: 'Your design is being printed onto your bottle.',
+      check: 'One last look at the print and the lid before your bottle moves on.',
+      pack: 'Wrapped, packed and labeled. Waiting for the courier to pick it up.'
+    },
+    mug: {
+      noun: 'mug',
+      step3: ['Heat set', 'Heat set', 'Heat presses the design into the mug, so it stays sharp sip after sip.'],
+      press: 'Your design is being printed and lined up to wrap around your mug.',
+      check: 'One last look at the print, edge to edge, before your mug moves on.',
+      pack: 'Wrapped, packed and labeled. Waiting for the courier to pick it up.'
+    },
+    journal: {
+      noun: 'journal',
+      step3: ['Binding', 'Binding', 'The pages are stacked and bound into your printed cover.'],
+      press: 'Your cover is being printed, edge to edge.',
+      check: 'One last look at the cover and the binding before your journal moves on.',
+      pack: 'Packed and labeled. Waiting for the courier to pick it up.'
+    },
+    item: {
+      noun: 'piece',
+      step3: ['Finishing', 'Finishing', 'The print is set and the last details are finished.'],
+      press: 'Your design is being printed onto your piece.',
+      check: 'One last look at the print before your piece moves on.',
+      pack: 'Packed and labeled. Waiting for the courier to pick it up.'
+    }
+  };
+
+  function stagesFor(kind) {
+    const k = KINDS[kind];
+    return [
+      { label: 'Artwork', title: 'Artwork prepped', copy: `Your order is in. The design file is being lined up for your ${k.noun} before anything gets printed.` },
+      { label: 'Printing', title: 'On the press', copy: k.press },
+      { label: k.step3[0], title: k.step3[1], copy: k.step3[2] },
+      { label: 'Check', title: 'Quality check', copy: k.check },
+      { label: 'Packed', title: 'Packed', copy: k.pack },
+      { label: 'Shipped', title: 'On its way', copy: 'It is out the door. Follow every step with the tracking link below.' }
+    ];
+  }
 
   const TIPS = [
     'Nobody is coming. Show up anyway.',
@@ -26,6 +76,18 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (d, opts) => new Date(d).toLocaleDateString('en-US', opts || { weekday: 'short', month: 'short', day: 'numeric' });
 
+  // The backend tags each item (tee, bag, bottle, mug, journal); older orders fall back to the title.
+  function kindOf(it) {
+    if (KINDS[it.kind]) return it.kind;
+    const t = (it.title || '').toLowerCase();
+    if (/t-?shirt|\btee\b/.test(t)) return 'tee';
+    if (/\bbag\b/.test(t)) return 'bag';
+    if (/bottle/.test(t)) return 'bottle';
+    if (/\bmug\b/.test(t)) return 'mug';
+    if (/journal|notebook/.test(t)) return 'journal';
+    return 'item';
+  }
+
   // One scene per day since the order (Printful takes 2 to 5 days), holding on Packed from day 5.
   // As soon as the order ships, it jumps straight to the last scene, even on day 2.
   function pickStage(o) {
@@ -35,19 +97,31 @@
   }
 
   function render(o, stage) {
-    const s = STAGES[stage];
+    // Scenes follow the first item in the order; a mixed order says the rest is being made alongside it.
+    const kinds = o.items.map(kindOf);
+    const kind = kinds[0] || 'item';
+    const mixed = new Set(kinds).size > 1;
+    const stages = stagesFor(kind);
+    const s = stages[stage];
     const day = Math.floor((Date.now() - new Date(o.placed)) / DAY) + 1;
 
     $('orderNo').textContent = 'Order ' + o.number;
     $('placed').textContent = 'Placed ' + fmt(o.placed, { month: 'short', day: 'numeric' });
     $('stageTitle').textContent = s.title;
     $('stageDay').textContent = 'Day ' + day;
-    $('stageCopy').textContent = s.copy;
+    $('stageCopy').textContent = s.copy + (mixed && stage < 5 ? ' The rest of your order is being made alongside it.' : '');
     document.title = s.title + ' | Fangviper';
 
-    document.querySelectorAll('#scene svg').forEach((svg) => { svg.toggleAttribute('hidden', +svg.dataset.stage !== stage); });
+    document.querySelectorAll('#scene use[data-obj]').forEach((u) => {
+      const id = u.dataset.obj === 'pack' && $(kind + '-pack') ? kind + '-pack' : kind;
+      u.setAttribute('href', '#' + id);
+    });
+    document.querySelectorAll('#scene > svg').forEach((svg) => {
+      const only = svg.dataset.kind;
+      svg.toggleAttribute('hidden', +svg.dataset.stage !== stage || (only && !only.split(',').includes(kind)));
+    });
 
-    $('steps').replaceChildren(...STAGES.map((st, i) => {
+    $('steps').replaceChildren(...stages.map((st, i) => {
       const li = document.createElement('li');
       li.textContent = st.label;
       li.className = i < stage ? 'done' : i === stage ? 'now' : '';
@@ -99,17 +173,22 @@
     $('app').hidden = false;
   }
 
-  function sampleOrder(stage) {
+  const SAMPLE_ITEMS = {
+    tee: { title: 'Nobody Is Coming Tee', variant: 'Black / M', image: 'assets/demo-tee.jpg' },
+    bag: { title: 'Iron blueprint', variant: 'Gym bag' },
+    bottle: { title: 'Hydrate then dominate', variant: 'Water bottle' },
+    mug: { title: 'First coffee then conquer', variant: 'Mug' },
+    journal: { title: 'Begin', variant: 'Journal' }
+  };
+
+  function sampleOrder(stage, kind) {
     const now = Date.now();
     const placed = now - Math.max(stage, 0.2) * DAY;
     return {
       number: '#1042',
       placed,
-      status: stage === 0 ? 'pending' : stage === 5 ? 'shipped' : 'in_production',
-      items: [
-        { title: 'Nobody Is Coming Tee', variant: 'Black / M', qty: 1, image: 'assets/demo-tee.jpg' },
-        { title: 'Sample Tee', variant: 'Black / L', qty: 1 }
-      ],
+      status: stage === 5 ? 'shipped' : 'in_production',
+      items: [{ ...SAMPLE_ITEMS[kind], qty: 1, kind }],
       tracking: stage === 5
         ? { carrier: 'USPS', number: '9400 1000 0000 0000 0000 00', url: 'https://tools.usps.com/go/TrackConfirmAction', shippedAt: now - 0.3 * DAY }
         : null
@@ -119,32 +198,37 @@
   function demo() {
     const params = new URLSearchParams(location.search);
     let stage = Math.min(Math.max(parseInt(params.get('stage') || '1', 10) || 0, 0), 5);
+    let kind = SAMPLE_ITEMS[params.get('kind')] ? params.get('kind') : 'tee';
     const bar = $('demo');
-    const label = document.createElement('span');
-    label.className = 'small-label';
-    label.textContent = 'Sample order';
-    const buttons = STAGES.map((st, i) => {
+    const label = (text) => Object.assign(document.createElement('span'), { className: 'small-label', textContent: text });
+    const button = (text, onClick) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.textContent = st.label;
-      b.addEventListener('click', () => show(i));
+      b.textContent = text;
+      b.addEventListener('click', onClick);
       return b;
-    });
-    bar.replaceChildren(label, ...buttons);
+    };
+    const stageButtons = stagesFor(kind).map((st, i) => button(st.label, () => show(i, kind)));
+    const kindButtons = Object.keys(SAMPLE_ITEMS).map((k) => button(KINDS[k].noun, () => show(stage, k)));
+    bar.replaceChildren(label('Sample order'), ...stageButtons, label('/'), ...kindButtons);
     bar.hidden = false;
 
-    function show(i) {
+    function show(i, k) {
       stage = i;
-      buttons.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
-      render(sampleOrder(i), i);
-      history.replaceState(null, '', '?stage=' + i);
+      kind = k;
+      const labels = stagesFor(k);
+      stageButtons.forEach((b, j) => { b.textContent = labels[j].label; b.setAttribute('aria-pressed', String(j === i)); });
+      kindButtons.forEach((b, j) => b.setAttribute('aria-pressed', String(Object.keys(SAMPLE_ITEMS)[j] === k)));
+      render(sampleOrder(i, k), i);
+      history.replaceState(null, '', '?stage=' + i + '&kind=' + k);
     }
-    show(stage);
+    show(stage, kind);
   }
 
   async function live(token) {
     try {
-      const api = (document.querySelector('meta[name="api-base"]').content || '').replace(/\/$/, '');
+      // Local copies (wrangler dev) talk to their own backend; the live page uses the Worker address.
+      const api = isLocal ? '' : (document.querySelector('meta[name="api-base"]').content || '').replace(/\/$/, '');
       const res = await fetch(api + '/api/order/' + encodeURIComponent(token), { headers: { accept: 'application/json' } });
       if (!res.ok) throw new Error(res.status);
       const o = await res.json();
@@ -163,8 +247,8 @@
 
   const params = new URLSearchParams(location.search);
   const token = params.get('t');
-  const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+
   if (token) live(token);
-  else if (params.has('demo') || params.has('stage') || local) demo();
+  else if (params.has('demo') || params.has('stage') || isLocal) demo();
   else noLink();
 })();

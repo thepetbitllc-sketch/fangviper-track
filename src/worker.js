@@ -38,7 +38,7 @@ async function getOrder(token, env) {
     number: row.number,
     placed: row.placed,
     status: row.status === 'shipped' ? 'shipped' : 'in_production',
-    items: JSON.parse(row.items).map(({ title, variant, qty, image }) => ({ title, variant, qty, image })),
+    items: JSON.parse(row.items).map(({ title, variant, qty, image, kind }) => ({ title, variant, qty, image, kind: kind || null })),
     tracking: row.tracking ? JSON.parse(row.tracking) : null
   });
 }
@@ -100,11 +100,11 @@ async function saveOrder(o, env, ctx) {
 
   if (!insert.meta.changes) return; // Shopify retried a webhook we already have
 
-  // Product photos come from the store's public product feed; done after replying so Shopify gets a fast 200.
-  ctx.waitUntil(addImages(id, items, env).catch((e) => console.error('images', e)));
+  // Product photos and types come from the store's public product feed; done after replying so Shopify gets a fast 200.
+  ctx.waitUntil(addProductInfo(id, items, env).catch((e) => console.error('product info', e)));
 }
 
-async function addImages(id, items, env) {
+async function addProductInfo(id, items, env) {
   const products = new Map();
   for (let page = 1; page <= 4; page++) {
     const res = await fetch(`${env.STORE_URL}/products.json?limit=250&page=${page}`, {
@@ -117,6 +117,7 @@ async function addImages(id, items, env) {
   }
   for (const it of items) {
     const p = products.get(it.productId);
+    it.kind = kindOf(p, it.title);
     if (!p) continue;
     const v = (p.variants || []).find((x) => x.id === it.variantId);
     const images = p.images || [];
@@ -127,6 +128,19 @@ async function addImages(id, items, env) {
     if (src) it.image = src + (src.includes('?') ? '&' : '?') + 'width=240';
   }
   await env.DB.prepare('UPDATE orders SET items = ? WHERE id = ?').bind(JSON.stringify(items), id).run();
+}
+
+// Which scenes the tracking page shows, from the store tags, product type, title and Printful mockup file name
+// (e.g. ".../unisex-classic-tee-black-front.png"), so untagged products are still recognized.
+function kindOf(p, title) {
+  const photo = (p && p.images && p.images[0] && p.images[0].src.split('/').pop()) || '';
+  const words = [...((p && p.tags) || []), (p && p.product_type) || '', title || '', photo].join(' ').toLowerCase();
+  if (/t-?shirt|\btee\b/.test(words)) return 'tee';
+  if (/\bbag\b/.test(words)) return 'bag';
+  if (/bottle|drinkware/.test(words)) return 'bottle';
+  if (/\bmug\b/.test(words)) return 'mug';
+  if (/journal|notebook/.test(words)) return 'journal';
+  return 'item';
 }
 
 async function markShipped(f, env) {

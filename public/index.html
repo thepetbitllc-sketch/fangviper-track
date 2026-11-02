@@ -33,10 +33,37 @@
     </nav>
   </header>
 
+  <!-- Product outlines, all drawn so the print area sits at the same spot (x 38-62, y 22-51). -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="tee" viewBox="0 0 100 100">
-      <path d="M30 10 L40 6 Q50 14 60 6 L70 10 L90 24 L82 38 L72 32 L72 94 L28 94 L28 32 L18 38 L10 24 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-    </symbol>
+    <defs>
+      <symbol id="tee" viewBox="0 0 100 100">
+        <path d="M30 10 L40 6 Q50 14 60 6 L70 10 L90 24 L82 38 L72 32 L72 94 L28 94 L28 32 L18 38 L10 24 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="tee-pack" viewBox="0 0 100 100">
+        <rect x="10" y="30" width="80" height="30" rx="4" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <path d="M38 30 q12 12 24 0" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="mug" viewBox="0 0 100 100">
+        <path d="M74 28 H80 Q90 28 90 38 V50 Q90 60 80 60 H74" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M26 14 H74 V74 Q74 82 66 82 H34 Q26 82 26 74 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="bottle" viewBox="0 0 100 100">
+        <path d="M44 11 H56 V14 Q68 16 68 26 V90 Q68 96 62 96 H38 Q32 96 32 90 V26 Q32 16 44 14 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <rect x="41" y="2" width="18" height="9" rx="2" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="bag" viewBox="0 0 100 100">
+        <path d="M34 18 Q34 4 50 4 Q66 4 66 18" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <rect x="8" y="18" width="84" height="62" rx="14" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <path d="M20 22 V76 M80 22 V76" fill="none" stroke="currentColor" stroke-width="2" opacity=".5" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="journal" viewBox="0 0 100 100">
+        <rect x="22" y="6" width="56" height="86" rx="3" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <path d="M30 6 V92 M70 6 V92" fill="none" stroke="currentColor" stroke-width="2" opacity=".5" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="item" viewBox="0 0 100 100">
+        <rect x="22" y="14" width="56" height="72" rx="8" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      </symbol>
+    </defs>
   </svg>
 
   <main class="page" id="app" hidden>
@@ -49,23 +76,23 @@
       <p class="hero__day" id="stageDay"></p>
 
       <div class="scene" id="scene">
-        <!-- 1 artwork: design drawn on screen -->
+        <!-- 1 artwork: design drawn on screen (every product) -->
         <svg class="s-art" data-stage="0" viewBox="0 0 400 240" role="img" aria-label="Your design being prepared on screen" hidden>
           <rect class="ln" x="90" y="20" width="220" height="150" rx="6"/>
           <path class="ln" d="M200 170 V196 M165 198 H235"/>
           <text x="104" y="38" fill="#5e5e5e" font-family="Montserrat, sans-serif" font-size="8" letter-spacing="1">YOUR_DESIGN.PNG</text>
-          <use href="#tee" x="150" y="34" width="100" height="100" style="color:#5e5e5e"/>
-          <path class="ln draw" d="M174 90 q6.5 -10 13 0 t13 0 t13 0 t13 0"/>
-          <g class="cursor"><polygon class="ink" transform="translate(176 94)" points="0,0 0,14 4,10 8,18 10,17 6,9 12,9"/></g>
+          <use data-obj="flat" href="#tee" x="150" y="34" width="100" height="100" style="color:#5e5e5e"/>
+          <path class="ln draw" d="M184 72 q4 -8 8 0 t8 0 t8 0 t8 0"/>
+          <g class="cursor"><polygon class="ink" transform="translate(186 76)" points="0,0 0,14 4,10 8,18 10,17 6,9 12,9"/></g>
           <rect class="ln-dim" x="120" y="150" width="160" height="4" rx="2"/>
           <rect class="ink load fb" x="120" y="150" width="160" height="4" rx="2"/>
         </svg>
 
-        <!-- 2 press: DTG head prints the chest -->
-        <svg class="s-press" data-stage="1" viewBox="0 0 400 240" role="img" aria-label="Your shirt on the printer" hidden>
+        <!-- 2 press: print head reveals the design (every product) -->
+        <svg class="s-press" data-stage="1" viewBox="0 0 400 240" role="img" aria-label="Your design being printed" hidden>
           <path class="ln-dim" d="M104 28 V224 M296 28 V224"/>
           <rect class="ln-dim" x="120" y="40" width="160" height="180" rx="4"/>
-          <use href="#tee" x="135" y="50" width="130" height="130" style="color:#fff"/>
+          <use data-obj="flat" href="#tee" x="135" y="50" width="130" height="130" style="color:#fff"/>
           <image href="assets/logo-white.png" x="184" y="78" width="32" height="38"/>
           <rect class="cover fb" x="178" y="76" width="44" height="44" fill="#000"/>
           <g class="head">
@@ -77,8 +104,8 @@
           </g>
         </svg>
 
-        <!-- 3 cure: heat press closes on the shirt -->
-        <svg class="s-cure" data-stage="2" viewBox="0 0 400 240" role="img" aria-label="Heat press curing the print" hidden>
+        <!-- 3 tee: heat press closes on the shirt -->
+        <svg class="s-cure" data-stage="2" data-kind="tee" viewBox="0 0 400 240" role="img" aria-label="Heat press curing the print" hidden>
           <rect class="ln" x="300" y="40" width="14" height="156" rx="2"/>
           <path class="ln" d="M272 202 H342"/>
           <path class="ln" d="M290 183 H300"/>
@@ -96,10 +123,70 @@
           <path class="ln hand" d="M340 46 V35"/>
         </svg>
 
-        <!-- 4 check: magnifier inspects the print -->
-        <svg class="s-check" data-stage="3" viewBox="0 0 400 240" role="img" aria-label="Quality check of your shirt" hidden>
-          <use href="#tee" x="130" y="30" width="140" height="140" style="color:#fff"/>
-          <image href="assets/logo-white.png" x="180" y="70" width="40" height="48"/>
+        <!-- 3 bag: printed panels stitched together -->
+        <svg class="s-stitch" data-stage="2" data-kind="bag" viewBox="0 0 400 240" role="img" aria-label="Your gym bag being sewn" hidden>
+          <use href="#bag" x="110" y="20" width="180" height="180" style="color:#fff"/>
+          <image href="assets/logo-white.png" x="178" y="59" width="44" height="53"/>
+          <path class="ln-dim" d="M136 150 H264"/>
+          <path class="ln stitch" d="M140 150 h6" style="animation-delay:0s"/>
+          <path class="ln stitch" d="M149.5 150 h6" style="animation-delay:.2s"/>
+          <path class="ln stitch" d="M159 150 h6" style="animation-delay:.4s"/>
+          <path class="ln stitch" d="M168.5 150 h6" style="animation-delay:.6s"/>
+          <path class="ln stitch" d="M178 150 h6" style="animation-delay:.8s"/>
+          <path class="ln stitch" d="M187.5 150 h6" style="animation-delay:1s"/>
+          <path class="ln stitch" d="M197 150 h6" style="animation-delay:1.2s"/>
+          <path class="ln stitch" d="M206.5 150 h6" style="animation-delay:1.4s"/>
+          <path class="ln stitch" d="M216 150 h6" style="animation-delay:1.6s"/>
+          <path class="ln stitch" d="M225.5 150 h6" style="animation-delay:1.8s"/>
+          <path class="ln stitch" d="M235 150 h6" style="animation-delay:2s"/>
+          <path class="ln stitch" d="M244.5 150 h6" style="animation-delay:2.2s"/>
+          <path class="ln stitch" d="M254 150 h6" style="animation-delay:2.4s"/>
+          <g class="needle"><g class="needle-bob">
+            <path class="ln" d="M143 120 V146" stroke-width="2.5"/>
+            <circle class="ln" cx="143" cy="124" r="2"/>
+          </g></g>
+        </svg>
+
+        <!-- 3 journal: pages bound into the printed cover -->
+        <svg class="s-bind" data-stage="2" data-kind="journal" viewBox="0 0 400 240" role="img" aria-label="Your journal being bound" hidden>
+          <rect class="ln-dim" x="156" y="38" width="100" height="148" rx="2"/>
+          <path class="ln-dim" d="M170 62 H244 M170 80 H244 M170 98 H244 M170 116 H244 M170 134 H244 M170 152 H244 M170 170 H244"/>
+          <g class="swing">
+            <use href="#journal" x="110" y="22" width="180" height="180" style="color:#fff"/>
+            <image href="assets/logo-white.png" x="178" y="61" width="44" height="53"/>
+          </g>
+          <path class="ln-dim" d="M120 200 H290"/>
+        </svg>
+
+        <!-- 3 mug: heat sets the design -->
+        <svg class="s-heat" data-stage="2" data-kind="mug" viewBox="0 0 400 240" role="img" aria-label="Heat setting the design on your mug" hidden>
+          <path class="ln-dim" d="M110 186 H290"/>
+          <use href="#mug" x="125" y="40" width="150" height="150" style="color:#fff"/>
+          <image href="assets/logo-white.png" x="182" y="72" width="37" height="44"/>
+          <rect class="ln wrap" x="156" y="64" width="88" height="104" rx="8" stroke-dasharray="6 6"/>
+          <path class="ln heat" d="M178 52 q5 -6 0 -12 t0 -12"/>
+          <path class="ln heat h2" d="M200 52 q5 -6 0 -12 t0 -12"/>
+          <path class="ln heat h3" d="M222 52 q5 -6 0 -12 t0 -12"/>
+          <circle class="ln" cx="340" cy="46" r="16"/>
+          <path class="ln" d="M340 24 V30"/>
+          <path class="ln hand" d="M340 46 V35"/>
+        </svg>
+
+        <!-- 3 bottle and anything else: print sets, finish shines -->
+        <svg class="s-finish" data-stage="2" data-kind="bottle,item" viewBox="0 0 400 240" role="img" aria-label="The print being set" hidden>
+          <path class="ln-dim" d="M110 200 H290"/>
+          <use data-obj="flat" href="#bottle" x="110" y="22" width="180" height="180" style="color:#fff"/>
+          <image href="assets/logo-white.png" x="178" y="61" width="44" height="53"/>
+          <path class="ln glint" d="M168 150 L192 70" opacity=".6"/>
+          <circle class="ln" cx="340" cy="46" r="16"/>
+          <path class="ln" d="M340 24 V30"/>
+          <path class="ln hand" d="M340 46 V35"/>
+        </svg>
+
+        <!-- 4 check: magnifier inspects the print (every product) -->
+        <svg class="s-check" data-stage="3" viewBox="0 0 400 240" role="img" aria-label="Quality check of your order" hidden>
+          <use data-obj="flat" href="#tee" x="130" y="30" width="140" height="140" style="color:#fff"/>
+          <image href="assets/logo-white.png" x="183" y="60" width="34" height="41"/>
           <g class="lens">
             <circle class="ln" cx="170" cy="80" r="22" stroke-width="2.5"/>
             <path class="ln" d="M186 96 L204 114" stroke-width="5"/>
@@ -108,12 +195,11 @@
           <path class="ln tick" d="M310 60 l7 7 l13 -14"/>
         </svg>
 
-        <!-- 5 pack: folded shirt into the box -->
-        <svg class="s-pack" data-stage="4" viewBox="0 0 400 240" role="img" aria-label="Your shirt being packed" hidden>
+        <!-- 5 pack: item drops into the box (every product) -->
+        <svg class="s-pack" data-stage="4" viewBox="0 0 400 240" role="img" aria-label="Your order being packed" hidden>
           <path class="ln-dim" d="M90 210 H310"/>
           <g class="folded">
-            <rect class="solid" x="160" y="132" width="80" height="24" rx="3"/>
-            <path class="ln" d="M188 132 q12 10 24 0"/>
+            <use data-obj="pack" href="#tee-pack" x="165" y="126" width="70" height="70" style="color:#fff"/>
           </g>
           <rect class="solid" x="140" y="130" width="120" height="80"/>
           <rect class="ln-dim" x="210" y="176" width="38" height="24"/>
@@ -123,7 +209,6 @@
           <rect class="solid flap-r fb" x="200" y="126" width="60" height="4"/>
           <path class="ln tape" d="M150 128 H250" stroke-width="3"/>
         </svg>
-
         <!-- 6 ship: van on the road -->
         <svg class="s-ship" data-stage="5" viewBox="0 0 400 240" role="img" aria-label="Your order on its way" hidden>
           <path class="ln-dim" d="M40 204 H360"/>
