@@ -127,10 +127,10 @@ a.row:hover .row__v { color: var(--fg); }
 
   /* 3 cure: plate presses, heat rises, timer runs */
   .s-cure .plate { animation: press 4s ease-in-out infinite; }
-  .s-cure .heat { animation: heat 4s ease-in-out infinite; }
-  .s-cure .heat.h2 { animation-delay: .25s; }
-  .s-cure .heat.h3 { animation-delay: .5s; }
-  .s-cure .hand { transform-origin: 340px 46px; animation: spin 4s linear infinite; }
+  .heat { animation: heat 4s ease-in-out infinite; }
+  .heat.h2 { animation-delay: .25s; }
+  .heat.h3 { animation-delay: .5s; }
+  .hand { transform-origin: 340px 46px; animation: spin 4s linear infinite; }
 
   /* 4 check: magnifier scans, tick draws */
   .s-check .lens { animation: scan 4.5s ease-in-out infinite; }
@@ -149,13 +149,37 @@ a.row:hover .row__v { color: var(--fg); }
   .s-ship .speed { animation: speed .9s linear infinite; }
   .s-ship .speed.p2 { animation-delay: .3s; }
   .s-ship .speed.p3 { animation-delay: .6s; }
+
+  /* 3 bag: needle runs along the seam, stitches appear behind it */
+  .s-stitch .stitch { opacity: 0; animation: stitch 4s linear infinite; }
+  .s-stitch .needle { animation: needle 4s ease-in-out infinite; }
+  .s-stitch .needle-bob { animation: bob-needle .2s ease-in-out infinite alternate; }
+
+  /* 3 journal: cover swings shut over the pages */
+  .s-bind .swing { transform-box: fill-box; transform-origin: left center; animation: swing 4s ease-in-out infinite; }
+
+  /* 3 mug: heat wrap closes around the mug */
+  .s-heat .wrap { transform-box: fill-box; transform-origin: center; animation: wrap 4s ease-in-out infinite; }
+
+  /* 3 bottle: a shine passes over the finished print */
+  .s-finish .glint { animation: glint 3s ease-in-out infinite; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .s-stitch .stitch { opacity: 1; }
+}
+
+@keyframes stitch { 0% { opacity: 0; } 4%, 70% { opacity: 1; } 85%, 100% { opacity: 0; } }
+@keyframes needle { 0% { transform: translateX(0); } 65%, 80% { transform: translateX(114px); } 100% { transform: translateX(0); } }
+@keyframes bob-needle { from { transform: translateY(0); } to { transform: translateY(4px); } }
+@keyframes swing { 0%, 15% { transform: scaleX(0); } 45%, 88% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+@keyframes wrap { 0%, 10% { opacity: 0; transform: scale(1.12); } 25%, 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
+@keyframes glint { 0% { transform: translateX(0); opacity: 0; } 20% { opacity: .7; } 60% { transform: translateX(60px); opacity: 0; } 100% { transform: translateX(60px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .s-press .cover, .s-art .cursor { display: none; }
 }
 
 @keyframes draw { 0% { stroke-dashoffset: 120; } 60%, 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes cursor { 0% { transform: translate(0, 0); } 60%, 85% { transform: translate(52px, 0); } 100% { transform: translate(0, 0); } }
+@keyframes cursor { 0% { transform: translate(0, 0); } 60%, 85% { transform: translate(32px, 0); } 100% { transform: translate(0, 0); } }
 @keyframes load { 0% { transform: scaleX(0); } 85% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
 
 @keyframes head { 0% { transform: translateY(0); } 70%, 85% { transform: translateY(46px); } 100% { transform: translateY(0); } }
