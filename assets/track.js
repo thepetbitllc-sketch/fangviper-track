@@ -163,6 +163,9 @@
       return row;
     }));
 
+    // Zendrop items in the same order are left out of the page; they ship on their own.
+    $('otherNote').hidden = !o.otherItems;
+
     $('changeNote').textContent = stage === 5
       ? 'Questions about the delivery? Message us and we will help you out.'
       : 'Something wrong with your order? Message us and we will sort it out.';
