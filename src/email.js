@@ -11,13 +11,21 @@ function placedDate(row) {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' });
 }
 
+// Items that are printed for this order (older rows have no pod flag; they were all Printful).
+export function madeToOrder(row) {
+  return JSON.parse(row.items || '[]').filter((it) => it.pod !== false);
+}
+
 export function renderEmail(row, env) {
-  const items = JSON.parse(row.items || '[]');
+  const items = madeToOrder(row);
+  const others = JSON.parse(row.items || '[]').length - items.length;
+  const othersLine = others ? 'Other items in your order ship separately, and you will get their tracking by email.' : '';
   const link = `${env.SITE_URL}/?t=${encodeURIComponent(row.token)}`;
   const name = (row.first_name || '').trim();
   const placed = placedDate(row);
   const subject = `Your order ${row.number} is being made`;
-  const intro = `${name ? `Hey ${name}, your` : 'Your'} order is in the print shop. Every Fangviper piece is printed after you order it, so this one is being made just for you right now.`;
+  const what = others ? 'the printed part of your order' : 'your order';
+  const intro = `${name ? `Hey ${name}, ${what}` : what[0].toUpperCase() + what.slice(1)} is in the print shop. Every Fangviper piece is printed after you order it, so this one is being made just for you right now.`;
 
   const itemRows = items.map((it) => `
           <tr>
@@ -69,6 +77,7 @@ export function renderEmail(row, env) {
           <div style="font:400 26px/1 ${DISPLAY};color:#ffffff;padding-bottom:14px;border-bottom:1px solid #262626;">IN THIS ORDER</div>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${itemRows}
           </table>
+          ${othersLine ? `<div style="padding-top:14px;font:400 12.5px/1.6 ${BODY};color:#9a9a9a;">${esc(othersLine)}</div>` : ''}
         </td></tr>
         <tr><td align="center" class="pad" style="padding:56px 32px 0;font:400 13px/1.7 ${BODY};color:#9a9a9a;">
           Questions? Just reply to this email.
@@ -92,6 +101,7 @@ export function renderEmail(row, env) {
     '',
     'In this order:',
     ...items.map((it) => `- ${it.title}${it.variant ? ` (${it.variant})` : ''} x${it.qty}`),
+    ...(othersLine ? [othersLine] : []),
     '',
     'Questions? Just reply to this email.',
     'Fangviper - fangviper.com'

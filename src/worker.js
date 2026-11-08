@@ -2,7 +2,7 @@
    - Shopify admin webhooks (orders/create, fulfillments/create|update, orders/cancelled) -> POST /webhooks/shopify
    - The tracking page in /public reads GET /api/order/<token>
    - Every hour, orders that are EMAIL_DELAY_HOURS old get the "being made" email (Resend). */
-import { renderEmail } from './email.js';
+import { renderEmail, madeToOrder } from './email.js';
 
 const HOUR = 36e5;
 
@@ -38,7 +38,8 @@ async function getOrder(token, env) {
     number: row.number,
     placed: row.placed,
     status: row.status === 'shipped' ? 'shipped' : 'in_production',
-    items: JSON.parse(row.items).map(({ title, variant, qty, image, kind }) => ({ title, variant, qty, image, kind: kind || null })),
+    items: madeToOrder(row).map(({ title, variant, qty, image, kind }) => ({ title, variant, qty, image, kind: kind || null })),
+    otherItems: JSON.parse(row.items).filter((it) => it.pod === false).length,
     tracking: row.tracking ? JSON.parse(row.tracking) : null
   });
 }
@@ -77,7 +78,9 @@ async function verifyShopify(body, header, secret) {
 async function saveOrder(o, env, ctx) {
   const items = (o.line_items || [])
     .filter((li) => li.quantity > 0 && li.requires_shipping !== false)
-    .map((li) => ({ title: li.title, variant: li.variant_title || '', qty: li.quantity, productId: li.product_id, variantId: li.variant_id, image: null }));
+    .map((li) => ({ title: li.title, variant: li.variant_title || '', qty: li.quantity, productId: li.product_id, variantId: li.variant_id, image: null, pod: isPrintOnDemand(li) }));
+  // Zendrop and other suppliers ship ready-made products: an order without Printful items gets no email or page.
+  if (!items.some((it) => it.pod)) { console.log('skipped, no print-on-demand items', o.name); return; }
   const email = o.email || o.contact_email || (o.customer && o.customer.email) || null;
   // Shopify's "Send test notification" uses a fake @example.com customer stamped with the current time.
   if (email && /@example\.com$/i.test(email)) { console.log('skipped sample order', o.name); return; }
@@ -117,8 +120,8 @@ async function addProductInfo(id, items, env) {
   }
   for (const it of items) {
     const p = products.get(it.productId);
-    it.kind = kindOf(p, it.title);
-    if (!p) continue;
+    if (it.pod) it.kind = kindOf(p, it.title);
+    if (!p || !it.pod) continue;
     const v = (p.variants || []).find((x) => x.id === it.variantId);
     const images = p.images || [];
     // Printful mockups are named after the color (".../unisex-tee-maroon-front-...jpg"), so use that when the variant has no photo of its own.
@@ -143,8 +146,18 @@ function kindOf(p, title) {
   return 'item';
 }
 
+// Printful items are fulfilled by the "printful" fulfillment service and carry SKUs like "2400464_12634";
+// Zendrop items say "zendrop" and use plain SKUs. The SKU check covers payloads without the service field.
+function isPrintOnDemand(li) {
+  const service = li.fulfillment_service;
+  if (service && service !== 'manual') return service === 'printful';
+  return /^\d+_\d+$/.test(li.sku || '');
+}
+
 async function markShipped(f, env) {
   if (!f.order_id || f.status === 'cancelled' || f.status === 'failure') return;
+  // In a mixed order the Zendrop part ships on its own; only a Printful shipment moves the page to "On its way".
+  if ((f.line_items || []).length && !f.line_items.some(isPrintOnDemand)) { console.log('ignored non-Printful shipment', f.order_id); return; }
   const tracking = {
     carrier: f.tracking_company || '',
     number: f.tracking_number || (f.tracking_numbers || [])[0] || '',

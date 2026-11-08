@@ -76,6 +76,9 @@ npx wrangler deploy
 
 - Email delay: `EMAIL_DELAY_HOURS` in `wrangler.jsonc` (24). Orders older than 7 days, shipped
   or canceled orders, and orders without an email never get the email.
+- Suppliers: only Printful items (fulfillment service "printful", SKUs like `2400464_12634`) get the
+  email and page. Orders with only Zendrop items are skipped completely; in a mixed order the page and email
+  show just the printed items and say the rest ships separately. A Zendrop shipment never moves the page.
 - Product types: the backend tags each item as tee, bag, bottle, mug or journal (from store tags, product
   type, title or the Printful mockup file name) and the page shows matching scenes. A new kind of product
   falls back to a neutral outline and the word "piece"; ask Claude to add a scene set for it.
