@@ -1,4 +1,4 @@
-﻿/* Fangviper order tracking page.
+﻿/* Drevaunt order tracking page.
    Real orders: /?t=<secret token> -> GET /api/order/<token> on the Worker (see api-base in index.html).
    Sample order (?demo, or locally): stage and product switcher for previewing the look. */
 (() => {
@@ -110,7 +110,7 @@
     $('stageTitle').textContent = s.title;
     $('stageDay').textContent = 'Day ' + day;
     $('stageCopy').textContent = s.copy + (mixed && stage < 5 ? ' The rest of your order is being made alongside it.' : '');
-    document.title = s.title + ' | Fangviper';
+    document.title = s.title + ' | Drevaunt';
 
     document.querySelectorAll('#scene use[data-obj]').forEach((u) => {
       const id = u.dataset.obj === 'pack' && $(kind + '-pack') ? kind + '-pack' : kind;
