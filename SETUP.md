@@ -1,4 +1,4 @@
-﻿# Fangviper order tracking: setup
+﻿# Drevaunt order tracking: setup
 
 How it works: Shopify tells the backend about every order. 24 hours later the backend sends the
 "Your order is being made" email from contact@fangviper.com with a link to track.fangviper.com.

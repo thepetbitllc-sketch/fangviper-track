@@ -1,4 +1,4 @@
-/* Fangviper order tracking backend (Cloudflare Worker).
+/* Drevaunt order tracking backend (Cloudflare Worker).
    - Shopify admin webhooks (orders/create, fulfillments/create|update, orders/cancelled) -> POST /webhooks/shopify
    - The tracking page in /public reads GET /api/order/<token>
    - Every hour, orders that are EMAIL_DELAY_HOURS old get the "being made" email (Resend). */

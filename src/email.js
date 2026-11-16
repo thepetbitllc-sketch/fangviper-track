@@ -25,7 +25,7 @@ export function renderEmail(row, env) {
   const placed = placedDate(row);
   const subject = `Your order ${row.number} is being made`;
   const what = others ? 'the printed part of your order' : 'your order';
-  const intro = `${name ? `Hey ${name}, ${what}` : what[0].toUpperCase() + what.slice(1)} is in the print shop. Every Fangviper piece is printed after you order it, so this one is being made just for you right now.`;
+  const intro = `${name ? `Hey ${name}, ${what}` : what[0].toUpperCase() + what.slice(1)} is in the print shop. Every Drevaunt piece is printed after you order it, so this one is being made just for you right now.`;
 
   const itemRows = items.map((it) => `
           <tr>
@@ -56,7 +56,7 @@ export function renderEmail(row, env) {
     <tr><td align="center" style="padding:40px 0 48px;">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;">
         <tr><td align="center" class="pad" style="padding:0 32px;">
-          <a href="${esc(env.STORE_URL)}"><img src="${esc(env.SITE_URL)}/assets/logo-white.png" width="28" alt="Fangviper" style="display:block;width:28px;height:auto;border:0;"></a>
+          <a href="${esc(env.STORE_URL)}"><img src="${esc(env.SITE_URL)}/assets/logo-white.png" width="28" alt="Drevaunt" style="display:block;width:28px;height:auto;border:0;"></a>
         </td></tr>
         <tr><td align="center" class="pad" style="padding:44px 32px 0;font:500 11px/1.4 ${BODY};letter-spacing:2px;text-transform:uppercase;color:#5e5e5e;">
           Order ${esc(row.number)} &nbsp;&middot;&nbsp; Placed ${esc(placed)}
@@ -83,7 +83,7 @@ export function renderEmail(row, env) {
           Questions? Just reply to this email.
         </td></tr>
         <tr><td align="center" class="pad" style="padding:10px 32px 0;font:400 12px/1.6 ${BODY};color:#5e5e5e;">
-          Fangviper &nbsp;&middot;&nbsp; <a href="${esc(env.STORE_URL)}" style="color:#5e5e5e;text-decoration:none;">fangviper.com</a>
+          Drevaunt &nbsp;&middot;&nbsp; <a href="${esc(env.STORE_URL)}" style="color:#5e5e5e;text-decoration:none;">fangviper.com</a>
         </td></tr>
       </table>
     </td></tr>
@@ -104,7 +104,7 @@ export function renderEmail(row, env) {
     ...(othersLine ? [othersLine] : []),
     '',
     'Questions? Just reply to this email.',
-    'Fangviper - fangviper.com'
+    'Drevaunt - fangviper.com'
   ].join('\n');
 
   return { subject, html, text };
