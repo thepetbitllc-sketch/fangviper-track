@@ -14,7 +14,7 @@
   "vars": {
     "SITE_URL": "https://track.fangviper.com",
     "STORE_URL": "https://fangviper.com",
-    "MAIL_FROM": "Fangviper <contact@fangviper.com>",
+    "MAIL_FROM": "Drevaunt <contact@fangviper.com>",
     "MAIL_REPLY_TO": "contact@fangviper.com",
     "EMAIL_DELAY_HOURS": "24"
   }
