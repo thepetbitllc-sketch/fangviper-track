@@ -111,7 +111,7 @@ async function addProductInfo(id, items, env) {
   const products = new Map();
   for (let page = 1; page <= 4; page++) {
     const res = await fetch(`${env.STORE_URL}/products.json?limit=250&page=${page}`, {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; FangviperTrack/1.0; +https://track.fangviper.com)', accept: 'application/json' }
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; FangviperTrack/1.0; +https://track.drevaunt.com)', accept: 'application/json' }
     });
     if (!res.ok) { console.error('products.json', res.status); break; }
     const list = (await res.json()).products || [];
@@ -223,6 +223,6 @@ function newToken() {
 }
 
 function json(data, status = 200) {
-  // The page lives on track.fangviper.com (GitHub Pages) and calls this Worker from there.
+  // The page lives on track.drevaunt.com (GitHub Pages) and calls this Worker from there.
   return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-origin': '*' } });
 }

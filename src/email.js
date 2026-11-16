@@ -1,4 +1,4 @@
-/* The "your order is being made" email. Black and white like fangviper.com; table layout so it holds up in Gmail and Outlook. */
+/* The "your order is being made" email. Black and white like drevaunt.com; table layout so it holds up in Gmail and Outlook. */
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -83,7 +83,7 @@ export function renderEmail(row, env) {
           Questions? Just reply to this email.
         </td></tr>
         <tr><td align="center" class="pad" style="padding:10px 32px 0;font:400 12px/1.6 ${BODY};color:#5e5e5e;">
-          Drevaunt &nbsp;&middot;&nbsp; <a href="${esc(env.STORE_URL)}" style="color:#5e5e5e;text-decoration:none;">fangviper.com</a>
+          Drevaunt &nbsp;&middot;&nbsp; <a href="${esc(env.STORE_URL)}" style="color:#5e5e5e;text-decoration:none;">drevaunt.com</a>
         </td></tr>
       </table>
     </td></tr>
@@ -104,7 +104,7 @@ export function renderEmail(row, env) {
     ...(othersLine ? [othersLine] : []),
     '',
     'Questions? Just reply to this email.',
-    'Drevaunt - fangviper.com'
+    'Drevaunt - drevaunt.com'
   ].join('\n');
 
   return { subject, html, text };

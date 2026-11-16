@@ -1,7 +1,7 @@
 ﻿# Drevaunt order tracking: setup
 
 How it works: Shopify tells the backend about every order. 24 hours later the backend sends the
-"Your order is being made" email from contact@fangviper.com with a link to track.fangviper.com.
+"Your order is being made" email from contact@fangviper.com with a link to track.drevaunt.com.
 The page shows one scene per day and switches to "On its way" + tracking when Shopify marks the
 order fulfilled. Printful's API is not needed: Printful already pushes tracking into Shopify.
 
@@ -9,7 +9,7 @@ Nothing here changes products, prices or orders in Shopify. The backend only rec
 
 | Piece | Where it runs | Cost |
 |---|---|---|
-| Tracking page (`public/`) | GitHub Pages at track.fangviper.com | free |
+| Tracking page (`public/`) | GitHub Pages at track.drevaunt.com | free |
 | Backend (`src/`) | Cloudflare Worker (workers.dev address, customers never see it) | free plan |
 | Order storage | Cloudflare D1 database | free plan |
 | Email sending | Resend | free up to 3,000 emails a month (100 a day) |
@@ -18,7 +18,7 @@ Nothing here changes products, prices or orders in Shopify. The backend only rec
 
 1. **Cloudflare**: create a free account at dash.cloudflare.com. No need to move your DNS.
 2. **Resend**: create a free account at resend.com.
-   - Domains > Add domain > `fangviper.com`.
+   - Domains > Add domain > `drevaunt.com`.
    - Resend shows 3 or 4 DNS records (on `send.fangviper.com` and `resend._domainkey`).
      Add them at Spaceship. They don't touch your existing Shopify email, MX or DMARC records.
    - Wait until the domain shows **Verified**.
@@ -54,7 +54,7 @@ Nothing here changes products, prices or orders in Shopify. The backend only rec
 - Shopify webhook URL: `https://fangviper-track.fangviper-track.workers.dev/webhooks/shopify`
 - Database: D1 `fangviper-track`
 - Page: GitHub repo `thepetbitllc-sketch/fangviper-track`, served by GitHub Pages from branch
-  `gh-pages` at https://track.fangviper.com (Spaceship CNAME `track` -> `thepetbitllc-sketch.github.io`)
+  `gh-pages` at https://track.drevaunt.com (Spaceship CNAME `track` -> `thepetbitllc-sketch.github.io`)
 - Secrets saved: `RESEND_API_KEY`, `SHOPIFY_WEBHOOK_SECRET`
 - Logs: Cloudflare dashboard > Workers > fangviper-track > Logs, or `npx wrangler tail`.
   Each webhook logs `webhook <topic> <order>`; a wrong signing key logs `webhook rejected`.

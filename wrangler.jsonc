@@ -12,8 +12,8 @@
   // Every hour: send the "being made" email to orders that are 24h old.
   "triggers": { "crons": ["0 * * * *"] },
   "vars": {
-    "SITE_URL": "https://track.fangviper.com",
-    "STORE_URL": "https://fangviper.com",
+    "SITE_URL": "https://track.drevaunt.com",
+    "STORE_URL": "https://drevaunt.com",
     "MAIL_FROM": "Drevaunt <contact@fangviper.com>",
     "MAIL_REPLY_TO": "contact@fangviper.com",
     "EMAIL_DELAY_HOURS": "24"
