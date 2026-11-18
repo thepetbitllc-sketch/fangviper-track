@@ -56,7 +56,7 @@ export function renderEmail(row, env) {
     <tr><td align="center" style="padding:40px 0 48px;">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;">
         <tr><td align="center" class="pad" style="padding:0 32px;">
-          <a href="${esc(env.STORE_URL)}"><img src="${esc(env.SITE_URL)}/assets/logo-white.png" width="28" alt="Drevaunt" style="display:block;width:28px;height:auto;border:0;"></a>
+          <a href="${esc(env.STORE_URL)}"><img src="${esc(env.SITE_URL)}/assets/wordmark-white.png" width="150" alt="DREVAUNT" style="display:block;width:150px;height:auto;border:0;"></a>
         </td></tr>
         <tr><td align="center" class="pad" style="padding:44px 32px 0;font:500 11px/1.4 ${BODY};letter-spacing:2px;text-transform:uppercase;color:#5e5e5e;">
           Order ${esc(row.number)} &nbsp;&middot;&nbsp; Placed ${esc(placed)}
