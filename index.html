@@ -63,8 +63,34 @@
       <symbol id="item" viewBox="0 0 100 100">
         <rect x="22" y="14" width="56" height="72" rx="8" fill="#000" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>
       </symbol>
-    </defs>
-  </svg>
+      <!-- Warehouse pieces (not printed, so no print area) -->
+      <symbol id="suit" viewBox="0 0 100 100">
+        <path d="M18 18 L8 72 L17 74 L26 36 Z M82 18 L92 72 L83 74 L74 36 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M30 8 L42 5 L50 34 L58 5 L70 8 L82 18 L80 92 L20 92 L18 18 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M42 5 L37 22 L50 52 L63 22 L58 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" opacity=".7" vector-effect="non-scaling-stroke"/>
+        <circle cx="50" cy="62" r="1.6" fill="currentColor"/><circle cx="50" cy="74" r="1.6" fill="currentColor"/>
+      </symbol>
+      <symbol id="pants" viewBox="0 0 100 100">
+        <path d="M28 8 H72 L77 94 H56 L50 36 L44 94 H23 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M28 16 H72" fill="none" stroke="currentColor" stroke-width="2" opacity=".6" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="shirt" viewBox="0 0 100 100">
+        <path d="M30 10 L40 6 Q50 12 60 6 L70 10 L86 30 L93 82 L83 84 L75 42 L73 94 H27 L25 42 L17 84 L7 82 L14 30 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M40 6 L46 17 L50 11 L54 17 L60 6 M50 12 V94" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" opacity=".7" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="shoes" viewBox="0 0 100 100">
+        <path d="M8 66 Q9 48 26 46 L44 42 Q54 40 61 48 Q72 58 89 61 Q95 63 93 72 L10 74 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M8 78 H93 M46 46 L52 54 M52 44 L58 52" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="tie" viewBox="0 0 100 100">
+        <path d="M43 6 H57 L54 16 L62 74 L50 94 L38 74 L46 16 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M46 16 H54" fill="none" stroke="currentColor" stroke-width="2" opacity=".7" vector-effect="non-scaling-stroke"/>
+      </symbol>
+      <symbol id="socks" viewBox="0 0 100 100">
+        <path d="M36 6 H58 V52 Q58 60 64 64 L80 73 Q90 80 84 89 Q78 96 67 91 L42 78 Q33 72 35 61 Z" fill="#000" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="M36 16 H58" fill="none" stroke="currentColor" stroke-width="2" opacity=".7" vector-effect="non-scaling-stroke"/>
+      </symbol>
+    </defs>  </svg>
 
   <main class="page" id="app" hidden>
     <section class="hero">
@@ -72,6 +98,7 @@
         <span class="small-label" id="orderNo"></span>
         <span class="small-label" id="placed"></span>
       </div>
+      <div class="parts" id="parts" role="tablist" aria-label="Parts of this order" hidden></div>
       <h1 id="stageTitle"></h1>
       <p class="hero__day" id="stageDay"></p>
 
@@ -183,10 +210,46 @@
           <path class="ln hand" d="M340 46 V35"/>
         </svg>
 
+        <!-- Warehouse 1 confirmed: order lines get ticked off -->
+        <svg class="s-confirm" data-stock="0" viewBox="0 0 400 240" role="img" aria-label="Your order being confirmed" hidden>
+          <rect class="solid" x="140" y="16" width="120" height="200" rx="6"/>
+          <text x="200" y="36" text-anchor="middle" fill="#9a948e" font-family="Jost, sans-serif" font-size="9" letter-spacing="2">ORDER</text>
+          <path class="ln-dim" d="M140 46 H260"/>
+          <rect class="ln" x="156" y="64" width="20" height="20" rx="2"/>
+          <path class="ln-dim" d="M186 70 H232 M186 78 H218"/>
+          <path class="ln tick-row" d="M238 74 l5 5 l9 -10"/>
+          <rect class="ln" x="156" y="102" width="20" height="20" rx="2"/>
+          <path class="ln-dim" d="M186 108 H232 M186 116 H218"/>
+          <path class="ln tick-row t2" d="M238 112 l5 5 l9 -10"/>
+          <rect class="ln" x="156" y="140" width="20" height="20" rx="2"/>
+          <path class="ln-dim" d="M186 146 H232 M186 154 H218"/>
+          <path class="ln tick-row t3" d="M238 150 l5 5 l9 -10"/>
+          <circle class="ln-dim" cx="200" cy="190" r="13"/>
+          <path class="ln tick-row t4" d="M194 190 l4 4 l8 -9"/>
+        </svg>
+
+        <!-- Warehouse 2 picked: a box comes off the shelf into the basket -->
+        <svg class="s-pick" data-stock="1" viewBox="0 0 400 240" role="img" aria-label="Your pieces being picked from the shelves" hidden>
+          <path class="ln-dim" d="M50 206 H390"/>
+          <path class="ln" d="M70 24 V206 M290 24 V206 M70 100 H290 M70 168 H290"/>
+          <rect class="solid" x="84" y="72" width="40" height="28"/>
+          <rect class="solid" x="132" y="78" width="30" height="22"/>
+          <rect class="solid" x="244" y="70" width="34" height="30"/>
+          <rect class="solid" x="90" y="138" width="48" height="30"/>
+          <rect class="solid" x="150" y="146" width="34" height="22"/>
+          <rect class="solid" x="200" y="136" width="44" height="32"/>
+          <rect class="solid" x="252" y="144" width="28" height="24"/>
+          <g class="picked">
+            <rect class="solid" x="186" y="74" width="34" height="26"/>
+            <path class="ln-dim" d="M193 84 H213"/>
+          </g>
+          <path class="ln" d="M312 168 L318 206 H370 L376 168"/>
+        </svg>
+
         <!-- 4 check: magnifier inspects the print (every product) -->
-        <svg class="s-check" data-stage="3" viewBox="0 0 400 240" role="img" aria-label="Quality check of your order" hidden>
+        <svg class="s-check" data-stage="3" data-stock="2" viewBox="0 0 400 240" role="img" aria-label="Quality check of your order" hidden>
           <use data-obj="flat" href="#tee" x="130" y="30" width="140" height="140" style="color:#fff"/>
-          <image href="assets/mark-white.svg" x="183" y="60" width="34" height="41"/>
+          <image class="print" href="assets/mark-white.svg" x="183" y="60" width="34" height="41"/>
           <g class="lens">
             <circle class="ln" cx="170" cy="80" r="22" stroke-width="2.5"/>
             <path class="ln" d="M186 96 L204 114" stroke-width="5"/>
@@ -196,7 +259,7 @@
         </svg>
 
         <!-- 5 pack: item drops into the box (every product) -->
-        <svg class="s-pack" data-stage="4" viewBox="0 0 400 240" role="img" aria-label="Your order being packed" hidden>
+        <svg class="s-pack" data-stage="4" data-stock="3" viewBox="0 0 400 240" role="img" aria-label="Your order being packed" hidden>
           <path class="ln-dim" d="M90 210 H310"/>
           <g class="folded">
             <use data-obj="pack" href="#tee-pack" x="165" y="126" width="70" height="70" style="color:#fff"/>
@@ -210,7 +273,7 @@
           <path class="ln tape" d="M150 128 H250" stroke-width="3"/>
         </svg>
         <!-- 6 ship: van on the road -->
-        <svg class="s-ship" data-stage="5" viewBox="0 0 400 240" role="img" aria-label="Your order on its way" hidden>
+        <svg class="s-ship" data-stage="5" data-stock="4" viewBox="0 0 400 240" role="img" aria-label="Your order on its way" hidden>
           <path class="ln-dim" d="M40 204 H360"/>
           <path class="ln-dim road" d="M40 216 H360"/>
           <path class="ln speed" d="M84 130 H108"/>
