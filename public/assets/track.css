@@ -204,3 +204,28 @@ a.row:hover .row__v { color: var(--fg); }
 @keyframes speed { 0% { transform: translateX(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-60px); opacity: 0; } }
 
 @media (max-width: 520px) { .header__logo { font-size: 18px; letter-spacing: .18em; padding-left: .18em; } }
+
+/* parts of an order that ships in two (made for you / from our warehouse) */
+.parts { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.parts button { padding: 10px 18px; border: 1px solid var(--hair); border-radius: 100px; font: 500 12px/1 var(--body); letter-spacing: .04em; color: var(--mute); background: #fff; transition: color .2s, border-color .2s, background .2s; }
+.parts button:hover { color: var(--fg); border-color: var(--fg); }
+.parts button[aria-selected="true"] { background: var(--fg); border-color: var(--fg); color: #fff; }
+.demo__group { display: contents; }
+
+/* warehouse scenes */
+@media (prefers-reduced-motion: no-preference) {
+  .s-confirm .tick-row { stroke-dasharray: 22; animation: rowtick 4s ease-in-out infinite; }
+  .s-confirm .tick-row.t2 { animation-delay: .5s; }
+  .s-confirm .tick-row.t3 { animation-delay: 1s; }
+  .s-confirm .tick-row.t4 { animation-delay: 1.6s; }
+  .s-pick .picked { animation: pick 4.5s ease-in-out infinite; }
+}
+@keyframes rowtick { 0%, 8% { stroke-dashoffset: 22; } 22%, 86% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 22; } }
+@keyframes pick {
+  0%, 8% { transform: translate(0, 0); opacity: 1; }
+  24% { transform: translate(0, -16px); }
+  50% { transform: translate(141px, -16px); }
+  68%, 88% { transform: translate(141px, 102px); opacity: 1; }
+  96% { transform: translate(141px, 102px); opacity: 0; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}

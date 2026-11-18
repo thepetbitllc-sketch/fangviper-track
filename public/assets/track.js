@@ -1,11 +1,15 @@
-﻿/* Drevaunt order tracking page.
+/* Drevaunt order tracking page.
    Real orders: /?t=<secret token> -> GET /api/order/<token> on the Worker (see api-base in index.html).
+   An order has up to two parts that ship separately: printed pieces made to order (Printful, "pod")
+   and ready-made pieces from the warehouse (Zendrop, "stock"). Each part has its own steps and tracking.
    Sample order (?demo, or locally): stage and product switcher for previewing the look. */
 (() => {
   const DAY = 864e5;
   const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 
-  // What changes per product: the noun, step 3 (each product is finished differently) and the press/check/pack lines.
+  /* ---------- made to order (Printful) ---------- */
+
+  // What changes per printed product: the noun, step 3 (each product is finished differently) and the press/check/pack lines.
   const KINDS = {
     tee: {
       noun: 'shirt',
@@ -51,7 +55,7 @@
     }
   };
 
-  function stagesFor(kind) {
+  function podStages(kind) {
     const k = KINDS[kind];
     return [
       { label: 'Artwork', title: 'Artwork prepped', copy: `Your order is in. The design file is being lined up for your ${k.noun} before anything gets printed.` },
@@ -62,6 +66,23 @@
       { label: 'Shipped', title: 'On its way', copy: 'It is out the door. Follow every step with the tracking link below.' }
     ];
   }
+
+  /* ---------- from the warehouse (Zendrop) ---------- */
+
+  // Warehouse products only change the drawing; the steps are the same for all of them.
+  const STOCK_KINDS = ['suit', 'pants', 'shirt', 'tee', 'shoes', 'tie', 'socks', 'gear'];
+  const STOCK_STAGES = [
+    { label: 'Confirmed', title: 'Order confirmed', copy: 'Your order is in and lined up for our warehouse team.' },
+    { label: 'Picked', title: 'Picked from the shelves', copy: 'Your pieces are being pulled from the shelves and matched to your order.' },
+    { label: 'Checked', title: 'Quality check', copy: 'Every piece is checked for size, color and finish before it is packed.' },
+    { label: 'Ready', title: 'Getting ready to ship', copy: 'Packing and labeling. Your tracking link lands here the moment it leaves the warehouse.' },
+    { label: 'Shipped', title: 'On its way', copy: 'It is out the door. Follow every step with the tracking link below.' }
+  ];
+
+  const PART = {
+    pod: { tab: 'Made for you', stages: podStages, status: ['Made to order', 'Every print is made after you order it. You will get an email with tracking the moment it ships.'], together: 'The rest of this part is being made alongside it.' },
+    stock: { tab: 'From our warehouse', stages: () => STOCK_STAGES, status: ['Ships from our warehouse', 'Ready-made and checked before it leaves. You will get an email with tracking the moment it ships.'], together: 'The rest of this part is packed alongside it.' }
+  };
 
   const TIPS = [
     'Nobody is coming. Show up anyway.',
@@ -76,8 +97,9 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (d, opts) => new Date(d).toLocaleDateString('en-US', opts || { weekday: 'short', month: 'short', day: 'numeric' });
 
-  // The backend tags each item (tee, bag, bottle, mug, journal); older orders fall back to the title.
-  function kindOf(it) {
+  // The backend tags each item; older orders fall back to the title.
+  function kindOf(it, source) {
+    if (source === 'stock') return STOCK_KINDS.includes(it.kind) ? it.kind : 'gear';
     if (KINDS[it.kind]) return it.kind;
     const t = (it.title || '').toLowerCase();
     if (/t-?shirt|\btee\b/.test(t)) return 'tee';
@@ -87,41 +109,72 @@
     if (/journal|notebook/.test(t)) return 'journal';
     return 'item';
   }
+  const symbolOf = (kind) => (kind === 'gear' ? 'item' : kind);
 
-  // One scene per day since the order (Printful takes 2 to 5 days), holding on Packed from day 5.
-  // As soon as the order ships, it jumps straight to the last scene, even on day 2.
-  function pickStage(o) {
-    if (o.status === 'shipped') return 5;
+  // One step per day since the order, holding on the last step before shipping
+  // (Printful takes 2 to 5 days, so Packed from day 5; the warehouse holds on "Getting ready to ship").
+  // As soon as a part ships, it jumps straight to "On its way", even on day 2.
+  function pickStage(o, part) {
+    const last = PART[part.source].stages('item').length - 1;
+    if (part.status === 'shipped') return last;
     const days = Math.floor((Date.now() - new Date(o.placed)) / DAY);
-    return Math.min(Math.max(days, 0), 4);
+    return Math.min(Math.max(days, 0), last - 1);
   }
 
-  function render(o, stage) {
-    // Scenes follow the first item in the order; a mixed order says the rest is being made alongside it.
-    const kinds = o.items.map(kindOf);
-    const kind = kinds[0] || 'item';
-    const mixed = new Set(kinds).size > 1;
-    const stages = stagesFor(kind);
+  // Orders stored before the warehouse flow come back as a single printed part.
+  const partsOf = (o) => o.groups || [{ source: 'pod', status: o.status, items: o.items, tracking: o.tracking }];
+
+  function render(o, partIndex, forcedStage) {
+    const parts = partsOf(o);
+    const part = parts[partIndex];
+    const flow = PART[part.source];
+    const kinds = part.items.map((it) => kindOf(it, part.source));
+    const kind = kinds[0] || (part.source === 'stock' ? 'gear' : 'item');
+    const stages = flow.stages(part.source === 'pod' ? kind : null);
+    const stage = forcedStage ?? pickStage(o, part);
     const s = stages[stage];
+    const shipped = stage === stages.length - 1;
     const day = Math.floor((Date.now() - new Date(o.placed)) / DAY) + 1;
 
     $('orderNo').textContent = 'Order ' + o.number;
     $('placed').textContent = 'Placed ' + fmt(o.placed, { month: 'short', day: 'numeric' });
     $('stageTitle').textContent = s.title;
     $('stageDay').textContent = 'Day ' + day;
-    $('stageCopy').textContent = s.copy + (mixed && stage < 5 ? ' The rest of your order is being made alongside it.' : '');
+    $('stageCopy').textContent = s.copy + (new Set(kinds).size > 1 && !shipped ? ' ' + flow.together : '');
     document.title = s.title + ' | Drevaunt';
 
+    // Tabs when the order ships in two parts.
+    const tabs = $('parts');
+    tabs.hidden = parts.length < 2;
+    tabs.replaceChildren(...parts.map((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(i === partIndex));
+      b.textContent = PART[p.source].tab + (p.status === 'shipped' ? ' · shipped' : '');
+      b.addEventListener('click', () => render(o, i, forcedStage === undefined ? undefined : Math.min(forcedStage, PART[p.source].stages('item').length - 1)));
+      return b;
+    }));
+
+    // Scenes: printed parts use data-stage, warehouse parts data-stock; both draw the item's own outline.
+    const sym = symbolOf(kind);
     document.querySelectorAll('#scene use[data-obj]').forEach((u) => {
-      const id = u.dataset.obj === 'pack' && $(kind + '-pack') ? kind + '-pack' : kind;
+      const id = u.dataset.obj === 'pack' && $(sym + '-pack') ? sym + '-pack' : sym;
       u.setAttribute('href', '#' + id);
     });
     document.querySelectorAll('#scene > svg').forEach((svg) => {
       const only = svg.dataset.kind;
-      svg.toggleAttribute('hidden', +svg.dataset.stage !== stage || (only && !only.split(',').includes(kind)));
+      const show = part.source === 'pod'
+        ? +svg.dataset.stage === stage && svg.dataset.stage !== undefined && (!only || only.split(',').includes(kind))
+        : svg.dataset.stock !== undefined && +svg.dataset.stock === stage;
+      svg.toggleAttribute('hidden', !show);
     });
+    // Warehouse pieces are not printed, so the scenes leave the Drevaunt print off them.
+    document.querySelectorAll('#scene .print').forEach((el) => { el.style.display = part.source === 'stock' ? 'none' : ''; });
 
-    $('steps').replaceChildren(...stages.map((st, i) => {
+    const steps = $('steps');
+    steps.style.gridTemplateColumns = `repeat(${stages.length}, 1fr)`;
+    steps.replaceChildren(...stages.map((st, i) => {
       const li = document.createElement('li');
       li.textContent = st.label;
       li.className = i < stage ? 'done' : i === stage ? 'now' : '';
@@ -130,18 +183,18 @@
     }));
 
     const btn = $('trackBtn');
-    if (stage === 5 && o.tracking) {
-      $('statusBig').textContent = 'Shipped ' + fmt(o.tracking.shippedAt, { month: 'short', day: 'numeric' });
-      $('statusSub').textContent = [o.tracking.carrier, o.tracking.number].filter(Boolean).join('  /  ');
-      btn.href = o.tracking.url;
-      btn.hidden = !o.tracking.url;
+    if (shipped && part.tracking) {
+      $('statusBig').textContent = 'Shipped ' + fmt(part.tracking.shippedAt, { month: 'short', day: 'numeric' });
+      $('statusSub').textContent = [part.tracking.carrier, part.tracking.number].filter(Boolean).join('  /  ');
+      btn.href = part.tracking.url;
+      btn.hidden = !part.tracking.url;
     } else {
-      $('statusBig').textContent = 'Made to order';
-      $('statusSub').textContent = 'Every piece is printed after you order it. You will get an email with tracking the moment it ships.';
+      $('statusBig').textContent = flow.status[0];
+      $('statusSub').textContent = flow.status[1];
       btn.hidden = true;
     }
 
-    $('items').replaceChildren(...o.items.map((it) => {
+    $('items').replaceChildren(...part.items.map((it) => {
       const row = document.createElement('div');
       row.className = it.image ? 'row row--img' : 'row';
       if (it.image) {
@@ -163,10 +216,10 @@
       return row;
     }));
 
-    // Zendrop items in the same order are left out of the page; they ship on their own.
-    $('otherNote').hidden = !o.otherItems;
+    $('otherNote').hidden = parts.length < 2;
+    $('otherNote').textContent = 'This order ships in two parts. Switch between them at the top of the page.';
 
-    $('changeNote').textContent = stage === 5
+    $('changeNote').textContent = shipped
       ? 'Questions about the delivery? Message us and we will help you out.'
       : 'Something wrong with your order? Message us and we will sort it out.';
 
@@ -176,32 +229,43 @@
     $('app').hidden = false;
   }
 
+  /* ---------- sample order ---------- */
+
   const SAMPLE_ITEMS = {
-    tee: { title: 'Nobody Is Coming Tee', variant: 'Black / M', image: 'assets/demo-tee.jpg' },
-    bag: { title: 'Iron blueprint', variant: 'Gym bag' },
-    bottle: { title: 'Hydrate then dominate', variant: 'Water bottle' },
-    mug: { title: 'First coffee then conquer', variant: 'Mug' },
-    journal: { title: 'Begin', variant: 'Journal' }
+    tee: { source: 'pod', label: 'shirt', title: 'Nobody Is Coming Tee', variant: 'Black / M', image: 'assets/demo-tee.jpg' },
+    bag: { source: 'pod', label: 'gym bag', title: 'Iron blueprint', variant: 'Gym bag' },
+    bottle: { source: 'pod', label: 'bottle', title: 'Hydrate then dominate', variant: 'Water bottle' },
+    mug: { source: 'pod', label: 'mug', title: 'First coffee then conquer', variant: 'Mug' },
+    journal: { source: 'pod', label: 'journal', title: 'Begin', variant: 'Journal' },
+    suit: { source: 'stock', label: 'suit', title: 'The Navy Three-Piece Suit', variant: 'Navy / 40R' },
+    pants: { source: 'stock', label: 'joggers', title: 'The Black Training Joggers', variant: 'Black / M' },
+    shirt: { source: 'stock', label: 'dress shirt', title: 'Premium Non-Iron Dress Shirt', variant: 'White / M' },
+    gymtee: { source: 'stock', kind: 'tee', label: 'gym tee', title: 'The Black Gym Tee', variant: 'Black / L' },
+    shoes: { source: 'stock', label: 'shoes', title: 'Engraved Leather Brogue Shoes', variant: 'Black / 42' },
+    tie: { source: 'stock', label: 'tie', title: 'Black Paisley Jacquard Tie Set', variant: 'Black' },
+    socks: { source: 'stock', label: 'socks', title: 'Business Crew Socks (10 pairs)', variant: 'Mixed' },
+    gear: { source: 'stock', label: 'gear', title: 'Grip Strength Trainer Kit', variant: 'Kit' },
+    mixed: { label: 'mixed order' }
   };
 
-  function sampleOrder(stage, kind) {
+  function sampleOrder(stage, key) {
     const now = Date.now();
     const placed = now - Math.max(stage, 0.2) * DAY;
-    return {
-      number: '#1042',
-      placed,
-      status: stage === 5 ? 'shipped' : 'in_production',
-      items: [{ ...SAMPLE_ITEMS[kind], qty: 1, kind }],
-      tracking: stage === 5
-        ? { carrier: 'USPS', number: '9400 1000 0000 0000 0000 00', url: 'https://tools.usps.com/go/TrackConfirmAction', shippedAt: now - 0.3 * DAY }
-        : null
+    const tracking = { carrier: 'USPS', number: '9400 1000 0000 0000 0000 00', url: 'https://tools.usps.com/go/TrackConfirmAction', shippedAt: now - 0.3 * DAY };
+    const part = (k, source) => {
+      const { label, source: _s, kind, ...it } = SAMPLE_ITEMS[k];
+      const last = PART[source].stages('item').length - 1;
+      const done = stage >= last;
+      return { source, status: done ? 'shipped' : 'in_production', tracking: done ? tracking : null, items: [{ ...it, qty: 1, kind: kind || k }] };
     };
+    const groups = key === 'mixed' ? [part('tee', 'pod'), part('suit', 'stock')] : [part(key, SAMPLE_ITEMS[key].source)];
+    return { number: '#1042', placed, groups };
   }
 
   function demo() {
     const params = new URLSearchParams(location.search);
-    let stage = Math.min(Math.max(parseInt(params.get('stage') || '1', 10) || 0, 0), 5);
-    let kind = SAMPLE_ITEMS[params.get('kind')] ? params.get('kind') : 'tee';
+    let key = SAMPLE_ITEMS[params.get('kind')] ? params.get('kind') : 'tee';
+    let stage = Math.max(parseInt(params.get('stage') || '1', 10) || 0, 0);
     const bar = $('demo');
     const label = (text) => Object.assign(document.createElement('span'), { className: 'small-label', textContent: text });
     const button = (text, onClick) => {
@@ -211,21 +275,27 @@
       b.addEventListener('click', onClick);
       return b;
     };
-    const stageButtons = stagesFor(kind).map((st, i) => button(st.label, () => show(i, kind)));
-    const kindButtons = Object.keys(SAMPLE_ITEMS).map((k) => button(KINDS[k].noun, () => show(stage, k)));
-    bar.replaceChildren(label('Sample order'), ...stageButtons, label('/'), ...kindButtons);
+    const stageBox = document.createElement('span');
+    stageBox.className = 'demo__group';
+    const kindButtons = Object.keys(SAMPLE_ITEMS).map((k) => button(SAMPLE_ITEMS[k].label, () => show(stage, k)));
+    bar.replaceChildren(label('Sample order'), stageBox, label('/'), ...kindButtons);
     bar.hidden = false;
 
     function show(i, k) {
-      stage = i;
-      kind = k;
-      const labels = stagesFor(k);
-      stageButtons.forEach((b, j) => { b.textContent = labels[j].label; b.setAttribute('aria-pressed', String(j === i)); });
+      const source = k === 'mixed' || SAMPLE_ITEMS[k].source === 'pod' ? 'pod' : 'stock';
+      const labels = PART[source].stages('item');
+      stage = Math.min(i, labels.length - 1);
+      key = k;
+      stageBox.replaceChildren(...labels.map((st, j) => {
+        const b = button(st.label, () => show(j, key));
+        b.setAttribute('aria-pressed', String(j === stage));
+        return b;
+      }));
       kindButtons.forEach((b, j) => b.setAttribute('aria-pressed', String(Object.keys(SAMPLE_ITEMS)[j] === k)));
-      render(sampleOrder(i, k), i);
-      history.replaceState(null, '', '?stage=' + i + '&kind=' + k);
+      render(sampleOrder(stage, k), 0, stage);
+      history.replaceState(null, '', '?stage=' + stage + '&kind=' + k);
     }
-    show(stage, kind);
+    show(stage, key);
   }
 
   async function live(token) {
@@ -235,7 +305,10 @@
       const res = await fetch(api + '/api/order/' + encodeURIComponent(token), { headers: { accept: 'application/json' } });
       if (!res.ok) throw new Error(res.status);
       const o = await res.json();
-      render(o, pickStage(o));
+      // Open on the first part that has not shipped yet.
+      const parts = partsOf(o);
+      const open = parts.findIndex((p) => p.status !== 'shipped');
+      render(o, open < 0 ? 0 : open);
     } catch (e) {
       $('err').hidden = false;
     }

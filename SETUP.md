@@ -1,4 +1,4 @@
-﻿# Drevaunt order tracking: setup
+# Drevaunt order tracking: setup
 
 How it works: Shopify tells the backend about every order. 24 hours later the backend sends the
 "Your order is being made" email from contact@fangviper.com with a link to track.drevaunt.com.
@@ -76,9 +76,10 @@ npx wrangler deploy
 
 - Email delay: `EMAIL_DELAY_HOURS` in `wrangler.jsonc` (24). Orders older than 7 days, shipped
   or canceled orders, and orders without an email never get the email.
-- Suppliers: only Printful items (fulfillment service "printful", SKUs like `2400464_12634`) get the
-  email and page. Orders with only Zendrop items are skipped completely; in a mixed order the page and email
-  show just the printed items and say the rest ships separately. A Zendrop shipment never moves the page.
+- Suppliers: every order is covered. Printful items are "made for you" (Artwork, Printing, product step,
+  Check, Packed, Shipped); Zendrop items ship "from our warehouse" (Confirmed, Picked, Checked, Getting ready
+  to ship, Shipped). A mixed order gets one email and one page with a tab per part, and each part gets its own
+  tracking from its own Shopify fulfillment. Shared logic lives in `src/order.js`.
 - Product types: the backend tags each item as tee, bag, bottle, mug or journal (from store tags, product
   type, title or the Printful mockup file name) and the page shows matching scenes. A new kind of product
   falls back to a neutral outline and the word "piece"; ask Claude to add a scene set for it.

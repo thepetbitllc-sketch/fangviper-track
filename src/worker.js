@@ -1,8 +1,10 @@
 /* Drevaunt order tracking backend (Cloudflare Worker).
    - Shopify admin webhooks (orders/create, fulfillments/create|update, orders/cancelled) -> POST /webhooks/shopify
    - The tracking page in /public reads GET /api/order/<token>
-   - Every hour, orders that are EMAIL_DELAY_HOURS old get the "being made" email (Resend). */
-import { renderEmail, madeToOrder } from './email.js';
+   - Every hour, orders that are EMAIL_DELAY_HOURS old get the "your order is underway" email (Resend).
+   Printful items are made to order, Zendrop items ship from the warehouse; each part has its own progress (see order.js). */
+import { renderEmail } from './email.js';
+import { groupsOf, isPrintOnDemand, printKindOf, stockKindOf } from './order.js';
 
 const HOUR = 36e5;
 
@@ -34,13 +36,21 @@ async function getOrder(token, env) {
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return json({ error: 'not found' }, 404);
   const row = await env.DB.prepare('SELECT * FROM orders WHERE token = ?').bind(token).first();
   if (!row || row.status === 'canceled') return json({ error: 'not found' }, 404);
+  const groups = groupsOf(row).map((g) => ({
+    source: g.source,
+    status: g.tracking ? 'shipped' : 'in_production',
+    tracking: g.tracking,
+    items: g.items.map(({ title, variant, qty, image, kind }) => ({ title, variant, qty, image, kind: kind || null }))
+  }));
   return json({
     number: row.number,
     placed: row.placed,
-    status: row.status === 'shipped' ? 'shipped' : 'in_production',
-    items: madeToOrder(row).map(({ title, variant, qty, image, kind }) => ({ title, variant, qty, image, kind: kind || null })),
-    otherItems: JSON.parse(row.items).filter((it) => it.pod === false).length,
-    tracking: row.tracking ? JSON.parse(row.tracking) : null
+    groups,
+    // Single-part fields that pages from before the warehouse flow read.
+    status: groups[0].status,
+    items: groups[0].items,
+    tracking: groups[0].tracking,
+    otherItems: groups.slice(1).reduce((n, g) => n + g.items.length, 0)
   });
 }
 
@@ -78,9 +88,11 @@ async function verifyShopify(body, header, secret) {
 async function saveOrder(o, env, ctx) {
   const items = (o.line_items || [])
     .filter((li) => li.quantity > 0 && li.requires_shipping !== false)
-    .map((li) => ({ title: li.title, variant: li.variant_title || '', qty: li.quantity, productId: li.product_id, variantId: li.variant_id, image: null, pod: isPrintOnDemand(li) }));
-  // Zendrop and other suppliers ship ready-made products: an order without Printful items gets no email or page.
-  if (!items.some((it) => it.pod)) { console.log('skipped, no print-on-demand items', o.name); return; }
+    .map((li) => {
+      const pod = isPrintOnDemand(li);
+      return { title: li.title, variant: li.variant_title || '', qty: li.quantity, productId: li.product_id, variantId: li.variant_id, image: null, pod, kind: pod ? null : stockKindOf(null, li.title) };
+    });
+  if (!items.length) { console.log('skipped, nothing to ship', o.name); return; }
   const email = o.email || o.contact_email || (o.customer && o.customer.email) || null;
   // Shopify's "Send test notification" uses a fake @example.com customer stamped with the current time.
   if (email && /@example\.com$/i.test(email)) { console.log('skipped sample order', o.name); return; }
@@ -111,7 +123,7 @@ async function addProductInfo(id, items, env) {
   const products = new Map();
   for (let page = 1; page <= 4; page++) {
     const res = await fetch(`${env.STORE_URL}/products.json?limit=250&page=${page}`, {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; FangviperTrack/1.0; +https://track.drevaunt.com)', accept: 'application/json' }
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; DrevauntTrack/1.0; +https://track.drevaunt.com)', accept: 'application/json' }
     });
     if (!res.ok) { console.error('products.json', res.status); break; }
     const list = (await res.json()).products || [];
@@ -120,11 +132,12 @@ async function addProductInfo(id, items, env) {
   }
   for (const it of items) {
     const p = products.get(it.productId);
-    if (it.pod) it.kind = kindOf(p, it.title);
-    if (!p || !it.pod) continue;
+    it.kind = it.pod ? printKindOf(p, it.title) : stockKindOf(p, it.title);
+    if (!p) continue;
     const v = (p.variants || []).find((x) => x.id === it.variantId);
     const images = p.images || [];
-    // Printful mockups are named after the color (".../unisex-tee-maroon-front-...jpg"), so use that when the variant has no photo of its own.
+    // Mockups and supplier photos are often named after the color (".../unisex-tee-maroon-front-...jpg"),
+    // so use that when the variant has no photo of its own.
     const color = (it.variant.split(' / ')[0] || '').toLowerCase().trim().replace(/\s+/g, '-');
     const byColor = color && images.find((img) => img.src.toLowerCase().includes(`-${color}-`));
     const src = (v && v.featured_image && v.featured_image.src) || (byColor && byColor.src) || (images[0] && images[0].src);
@@ -133,47 +146,35 @@ async function addProductInfo(id, items, env) {
   await env.DB.prepare('UPDATE orders SET items = ? WHERE id = ?').bind(JSON.stringify(items), id).run();
 }
 
-// Which scenes the tracking page shows, from the store tags, product type, title and Printful mockup file name
-// (e.g. ".../unisex-classic-tee-black-front.png"), so untagged products are still recognized.
-function kindOf(p, title) {
-  const photo = (p && p.images && p.images[0] && p.images[0].src.split('/').pop()) || '';
-  const words = [...((p && p.tags) || []), (p && p.product_type) || '', title || '', photo].join(' ').toLowerCase();
-  if (/t-?shirt|\btee\b/.test(words)) return 'tee';
-  if (/\bbag\b/.test(words)) return 'bag';
-  if (/bottle|drinkware/.test(words)) return 'bottle';
-  if (/\bmug\b/.test(words)) return 'mug';
-  if (/journal|notebook/.test(words)) return 'journal';
-  return 'item';
-}
-
-// Printful items are fulfilled by the "printful" fulfillment service and carry SKUs like "2400464_12634";
-// Zendrop items say "zendrop" and use plain SKUs. The SKU check covers payloads without the service field.
-function isPrintOnDemand(li) {
-  const service = li.fulfillment_service;
-  if (service && service !== 'manual') return service === 'printful';
-  return /^\d+_\d+$/.test(li.sku || '');
-}
-
+// Printful and Zendrop ship separately, so each shipment fills in the tracking of its own part.
+// The order counts as shipped once every part has tracking.
 async function markShipped(f, env) {
   if (!f.order_id || f.status === 'cancelled' || f.status === 'failure') return;
-  // In a mixed order the Zendrop part ships on its own; only a Printful shipment moves the page to "On its way".
-  if ((f.line_items || []).length && !f.line_items.some(isPrintOnDemand)) { console.log('ignored non-Printful shipment', f.order_id); return; }
-  const tracking = {
+  const row = await env.DB.prepare('SELECT items, tracking, status FROM orders WHERE id = ?').bind(String(f.order_id)).first();
+  if (!row || row.status === 'canceled') return;
+  const groups = groupsOf(row);
+  const lines = f.line_items || [];
+  const source = lines.length ? (lines.some(isPrintOnDemand) ? 'pod' : 'stock') : groups[0].source;
+  if (!groups.some((g) => g.source === source)) return;
+
+  const tracking = Object.fromEntries(groups.filter((g) => g.tracking).map((g) => [g.source, g.tracking]));
+  tracking[source] = {
     carrier: f.tracking_company || '',
     number: f.tracking_number || (f.tracking_numbers || [])[0] || '',
     url: f.tracking_url || (f.tracking_urls || [])[0] || '',
     shippedAt: new Date(f.created_at || Date.now()).toISOString()
   };
-  await env.DB.prepare("UPDATE orders SET status = 'shipped', tracking = ? WHERE id = ? AND status != 'canceled'")
-    .bind(JSON.stringify(tracking), String(f.order_id)).run();
+  const status = groups.every((g) => tracking[g.source]) ? 'shipped' : 'open';
+  await env.DB.prepare('UPDATE orders SET tracking = ?, status = ? WHERE id = ?').bind(JSON.stringify(tracking), status, String(f.order_id)).run();
 }
 
-/* ---------- the delayed "being made" email ---------- */
+/* ---------- the delayed "your order is underway" email ---------- */
 
 async function sendDueEmails(env, delayHours) {
   const now = Date.now();
   const due = new Date(now - delayHours * HOUR).toISOString();
   const tooOld = new Date(now - 7 * 24 * HOUR).toISOString(); // never email about week-old orders
+  // Fully shipped orders are skipped: Shopify's shipping email has already told the customer more.
   const { results } = await env.DB.prepare(
     `SELECT * FROM orders WHERE status = 'open' AND emailed_at IS NULL AND email IS NOT NULL
      AND email NOT LIKE '%@example.com' AND placed <= ? AND placed >= ? ORDER BY placed LIMIT 50`
