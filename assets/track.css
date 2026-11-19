@@ -229,3 +229,28 @@ a.row:hover .row__v { color: var(--fg); }
   96% { transform: translate(141px, 102px); opacity: 0; }
   100% { transform: translate(0, 0); opacity: 0; }
 }
+
+/* daily line under the day counter */
+.hero__daily { margin-top: 8px; font: 400 13px/1.5 var(--body); color: var(--dim); }
+.hero__daily:empty { display: none; }
+
+/* waiting moments (one a day after the last step) */
+@media (prefers-reduced-motion: no-preference) {
+  .m-seal .tape-v { stroke-dasharray: 112; animation: tapev 4s ease-in-out infinite; }
+  .m-seal .dispenser { animation: dispense 4s ease-in-out infinite; }
+  .m-label .paper { animation: paper 4s ease-in-out infinite; }
+  .m-label .blink { animation: blink 1s steps(2, start) infinite; }
+  .m-address .lens2 { animation: lens2 4.5s ease-in-out infinite; }
+  .m-address .tick2 { stroke-dasharray: 60; animation: tick 4.5s ease-in-out infinite; }
+  .m-sort .belt { animation: belt 2.4s linear infinite; }
+  .m-sort .roller { transform-origin: center; animation: spin 1.2s linear infinite; }
+  .m-dock .hand2 { transform-origin: 66px 54px; animation: spin 6s linear infinite; }
+  .m-dock .door { animation: door 4s ease-in-out infinite; }
+}
+@keyframes tapev { 0%, 10% { stroke-dashoffset: 112; } 60%, 90% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 112; } }
+@keyframes dispense { 0%, 10% { transform: translateY(0); } 60%, 90% { transform: translateY(118px); } 100% { transform: translateY(0); } }
+@keyframes paper { 0% { transform: translateY(-58px); } 55%, 90% { transform: translateY(0); } 100% { transform: translateY(-58px); } }
+@keyframes blink { to { opacity: 0; } }
+@keyframes lens2 { 0% { transform: translate(0, 0); } 30% { transform: translate(40px, 0); } 55% { transform: translate(10px, 14px); } 80%, 100% { transform: translate(0, 0); } }
+@keyframes belt { from { transform: translateX(0); } to { transform: translateX(80px); } }
+@keyframes door { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }

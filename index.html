@@ -101,6 +101,7 @@
       <div class="parts" id="parts" role="tablist" aria-label="Parts of this order" hidden></div>
       <h1 id="stageTitle"></h1>
       <p class="hero__day" id="stageDay"></p>
+      <p class="hero__daily" id="daily"></p>
 
       <div class="scene" id="scene">
         <!-- 1 artwork: design drawn on screen (every product) -->
@@ -287,6 +288,81 @@
             <g class="wheel fb"><circle class="solid" cx="158" cy="188" r="13"/><path class="ln" d="M158 178 V198 M148 188 H168"/></g>
             <g class="wheel fb"><circle class="solid" cx="266" cy="188" r="13"/><path class="ln" d="M266 178 V198 M256 188 H276"/></g>
           </g>
+        </svg>
+
+        <!-- Waiting moments: one new scene a day after the last step, until the order ships -->
+        <!-- 0 box sealed: tape runs over the closed box -->
+        <svg class="m-seal" data-moment="0" viewBox="0 0 400 240" role="img" aria-label="Your box being sealed" hidden>
+          <path class="ln-dim" d="M90 210 H310"/>
+          <rect class="solid" x="130" y="112" width="140" height="98"/>
+          <rect class="solid" x="126" y="98" width="148" height="16"/>
+          <image href="assets/mark-ink.svg" x="144" y="128" width="22" height="26"/>
+          <path class="ln tape-v" d="M200 98 V210" style="stroke-width:7;stroke-linecap:butt"/>
+          <g class="dispenser"><rect class="solid" x="186" y="62" width="28" height="22" rx="4"/><path class="ln" d="M194 84 V92 M206 84 V92"/></g>
+        </svg>
+
+        <!-- 1 label printed: the shipping label slides out of the printer -->
+        <svg class="m-label" data-moment="1" viewBox="0 0 400 240" role="img" aria-label="Your shipping label being printed" hidden>
+          <path class="ln-dim" d="M50 210 H350"/>
+          <rect class="solid" x="70" y="130" width="110" height="80"/>
+          <image href="assets/mark-ink.svg" x="84" y="146" width="20" height="24"/>
+          <g class="paper">
+            <rect class="solid" x="244" y="100" width="72" height="62" rx="2"/>
+            <path class="ln-dim" d="M252 112 H300 M252 120 H290 M252 128 H296"/>
+            <path class="ln" d="M254 142 V154 M258 142 V154 M263 142 V154 M266 142 V154 M271 142 V154 M276 142 V154 M279 142 V154 M284 142 V154 M290 142 V154 M294 142 V154 M299 142 V154 M304 142 V154"/>
+          </g>
+          <rect class="solid" x="226" y="48" width="108" height="56" rx="8"/>
+          <path class="ln" d="M240 98 H320"/>
+          <circle class="ink blink" cx="318" cy="62" r="3"/>
+        </svg>
+
+        <!-- 2 address check: magnifier reads the label, then a tick -->
+        <svg class="m-address" data-moment="2" viewBox="0 0 400 240" role="img" aria-label="Final check of your address" hidden>
+          <path class="ln-dim" d="M90 210 H310"/>
+          <rect class="solid" x="110" y="108" width="180" height="102"/>
+          <rect class="ln" x="164" y="126" width="92" height="62" rx="2"/>
+          <path class="ln-dim" d="M174 140 H230 M174 150 H244 M174 160 H222"/>
+          <path class="ln" d="M176 172 V182 M180 172 V182 M185 172 V182 M190 172 V182 M194 172 V182 M199 172 V182 M204 172 V182 M208 172 V182 M214 172 V182 M219 172 V182"/>
+          <g class="lens2">
+            <circle class="ln" cx="190" cy="150" r="20" style="stroke-width:2.5"/>
+            <path class="ln" d="M204 164 L220 180" style="stroke-width:5"/>
+          </g>
+          <circle class="ln-dim" cx="320" cy="64" r="20"/>
+          <path class="ln tick2" d="M310 64 l7 7 l13 -14"/>
+        </svg>
+
+        <!-- 3 sorted: boxes roll along the conveyor to the outgoing batch -->
+        <svg class="m-sort" data-moment="3" viewBox="0 0 400 240" role="img" aria-label="Your box sorted for pickup" hidden>
+          <defs><clipPath id="beltclip"><rect x="40" y="96" width="320" height="76"/></clipPath></defs>
+          <g clip-path="url(#beltclip)"><g class="belt">
+            <rect class="solid" x="-36" y="134" width="48" height="36"/>
+            <rect class="solid" x="44" y="128" width="48" height="42"/>
+            <rect class="solid" x="124" y="134" width="48" height="36"/>
+            <rect class="solid" x="204" y="126" width="48" height="44"/>
+            <rect class="solid" x="284" y="134" width="48" height="36"/>
+          </g></g>
+          <path class="ln" d="M40 172 H360 M40 192 H360"/>
+          <g class="roller fb"><circle class="ln" cx="60" cy="182" r="8"/><path class="ln" d="M60 175 V189"/></g>
+          <g class="roller fb"><circle class="ln" cx="140" cy="182" r="8"/><path class="ln" d="M140 175 V189"/></g>
+          <g class="roller fb"><circle class="ln" cx="220" cy="182" r="8"/><path class="ln" d="M220 175 V189"/></g>
+          <g class="roller fb"><circle class="ln" cx="300" cy="182" r="8"/><path class="ln" d="M300 175 V189"/></g>
+          <path class="ln-dim" d="M60 192 V214 M340 192 V214"/>
+        </svg>
+
+        <!-- 4 waiting for pickup: stacked at the dock door, the clock ticks -->
+        <svg class="m-dock" data-moment="4" viewBox="0 0 400 240" role="img" aria-label="Your box waiting for courier pickup" hidden>
+          <path class="ln-dim" d="M30 210 H370"/>
+          <rect class="ln" x="250" y="40" width="112" height="170"/>
+          <path class="ln-dim door" d="M250 56 H362 M250 72 H362 M250 88 H362 M250 104 H362"/>
+          <path class="ln" d="M86 198 H214 M92 198 V206 M150 198 V206 M208 198 V206"/>
+          <rect class="solid" x="92" y="156" width="54" height="42"/>
+          <rect class="solid" x="152" y="160" width="56" height="38"/>
+          <rect class="solid" x="104" y="118" width="48" height="38"/>
+          <rect class="solid box-top" x="156" y="124" width="46" height="36"/>
+          <image href="assets/mark-ink.svg" x="170" y="132" width="18" height="21"/>
+          <circle class="ln" cx="66" cy="54" r="16"/>
+          <path class="ln" d="M66 32 V38"/>
+          <path class="ln hand2" d="M66 54 V43"/>
         </svg>
       </div>
 
