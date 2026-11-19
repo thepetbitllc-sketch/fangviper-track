@@ -80,6 +80,9 @@ npx wrangler deploy
   Check, Packed, Shipped); Zendrop items ship "from our warehouse" (Confirmed, Picked, Checked, Getting ready
   to ship, Shipped). A mixed order gets one email and one page with a tab per part, and each part gets its own
   tracking from its own Shopify fulfillment. Shared logic lives in `src/order.js`.
+- Long waits: after the last step the page shows one new "almost there" moment a day (box sealed, label printed,
+  address check, sorted, waiting for pickup), plus a "Day N of your order" counter with a daily line. If an order
+  has not fully shipped after REMINDER_DAYS (5), one reminder email goes out (column `reminded_at`).
 - Product types: the backend tags each item as tee, bag, bottle, mug or journal (from store tags, product
   type, title or the Printful mockup file name) and the page shows matching scenes. A new kind of product
   falls back to a neutral outline and the word "piece"; ask Claude to add a scene set for it.

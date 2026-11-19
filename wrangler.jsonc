@@ -16,7 +16,9 @@
     "STORE_URL": "https://drevaunt.com",
     "MAIL_FROM": "Drevaunt <contact@fangviper.com>",
     "MAIL_REPLY_TO": "contact@fangviper.com",
-    "EMAIL_DELAY_HOURS": "24"
+    "EMAIL_DELAY_HOURS": "24",
+    // A second email on this day if the order still has not shipped, pointing to that day's new step.
+    "REMINDER_DAYS": "5"
   }
   // Secrets (set with `npx wrangler secret put NAME`, never in this file):
   //   SHOPIFY_WEBHOOK_SECRET  the signing key shown under Shopify > Settings > Notifications > Webhooks

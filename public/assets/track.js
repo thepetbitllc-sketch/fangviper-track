@@ -79,6 +79,27 @@
     { label: 'Shipped', title: 'On its way', copy: 'It is out the door. Follow every step with the tracking link below.' }
   ];
 
+  // After the last step, a new "almost there" moment each day, so a long wait never shows the same thing twice.
+  // They stay about preparing the box and never claim it has shipped; tracking takes over the moment it does.
+  const MOMENTS = [
+    { title: 'Box sealed', copy: 'Taped shut and ready for its label.' },
+    { title: 'Shipping label printed', copy: 'Your label is printed with your address, ready to go on the box.' },
+    { title: 'Final address check', copy: 'One last look at the label, so your order goes to the right door.' },
+    { title: 'Sorted for pickup', copy: 'Your box is sorted into the outgoing batch for the courier.' },
+    { title: 'Waiting for courier pickup', copy: 'Ready at the dock. Your tracking link appears here the moment the courier scans it.' }
+  ];
+
+  // A different line under the day counter every day until the order ships.
+  const DAILY = [
+    'Something new happens here every day. Check back tomorrow.',
+    'Moving every day, even when you cannot see it.',
+    'Made for you, not pulled from a pile. Worth the wait.',
+    'Standards take time. Yours is on its way.',
+    'Another step closer than yesterday.',
+    'Patience is part of the discipline. Almost there.',
+    'Tomorrow brings the next step. Same place.'
+  ];
+
   const PART = {
     pod: { tab: 'Made for you', stages: podStages, status: ['Made to order', 'Every print is made after you order it. You will get an email with tracking the moment it ships.'], together: 'The rest of this part is being made alongside it.' },
     stock: { tab: 'From our warehouse', stages: () => STOCK_STAGES, status: ['Ships from our warehouse', 'Ready-made and checked before it leaves. You will get an email with tracking the moment it ships.'], together: 'The rest of this part is packed alongside it.' }
@@ -121,10 +142,18 @@
     return Math.min(Math.max(days, 0), last - 1);
   }
 
+  // Days past the last step before shipping: 0 = first waiting moment; holds on the last one. -1 = none.
+  function pickMoment(o, part) {
+    const last = PART[part.source].stages('item').length - 1;
+    if (part.status === 'shipped') return -1;
+    const days = Math.floor((Date.now() - new Date(o.placed)) / DAY);
+    return days > last - 1 ? Math.min(days - last, MOMENTS.length - 1) : -1;
+  }
+
   // Orders stored before the warehouse flow come back as a single printed part.
   const partsOf = (o) => o.groups || [{ source: 'pod', status: o.status, items: o.items, tracking: o.tracking }];
 
-  function render(o, partIndex, forcedStage) {
+  function render(o, partIndex, forcedStage, forcedMoment) {
     const parts = partsOf(o);
     const part = parts[partIndex];
     const flow = PART[part.source];
@@ -132,15 +161,17 @@
     const kind = kinds[0] || (part.source === 'stock' ? 'gear' : 'item');
     const stages = flow.stages(part.source === 'pod' ? kind : null);
     const stage = forcedStage ?? pickStage(o, part);
-    const s = stages[stage];
     const shipped = stage === stages.length - 1;
+    const moment = shipped ? -1 : forcedMoment ?? (forcedStage === undefined ? pickMoment(o, part) : -1);
+    const s = moment >= 0 ? MOMENTS[moment] : stages[stage];
     const day = Math.floor((Date.now() - new Date(o.placed)) / DAY) + 1;
 
     $('orderNo').textContent = 'Order ' + o.number;
     $('placed').textContent = 'Placed ' + fmt(o.placed, { month: 'short', day: 'numeric' });
     $('stageTitle').textContent = s.title;
-    $('stageDay').textContent = 'Day ' + day;
-    $('stageCopy').textContent = s.copy + (new Set(kinds).size > 1 && !shipped ? ' ' + flow.together : '');
+    $('stageDay').textContent = 'Day ' + day + ' of your order';
+    $('daily').textContent = shipped ? '' : DAILY[(day - 1) % DAILY.length];
+    $('stageCopy').textContent = s.copy + (new Set(kinds).size > 1 && !shipped && moment < 0 ? ' ' + flow.together : '');
     document.title = s.title + ' | Drevaunt';
 
     // Tabs when the order ships in two parts.
@@ -152,7 +183,7 @@
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(i === partIndex));
       b.textContent = PART[p.source].tab + (p.status === 'shipped' ? ' · shipped' : '');
-      b.addEventListener('click', () => render(o, i, forcedStage === undefined ? undefined : Math.min(forcedStage, PART[p.source].stages('item').length - 1)));
+      b.addEventListener('click', () => render(o, i, forcedStage === undefined ? undefined : Math.min(forcedStage, PART[p.source].stages('item').length - 1), forcedMoment));
       return b;
     }));
 
@@ -164,9 +195,11 @@
     });
     document.querySelectorAll('#scene > svg').forEach((svg) => {
       const only = svg.dataset.kind;
-      const show = part.source === 'pod'
-        ? +svg.dataset.stage === stage && svg.dataset.stage !== undefined && (!only || only.split(',').includes(kind))
-        : svg.dataset.stock !== undefined && +svg.dataset.stock === stage;
+      const show = moment >= 0
+        ? svg.dataset.moment !== undefined && +svg.dataset.moment === moment
+        : part.source === 'pod'
+          ? +svg.dataset.stage === stage && svg.dataset.stage !== undefined && (!only || only.split(',').includes(kind))
+          : svg.dataset.stock !== undefined && +svg.dataset.stock === stage;
       svg.toggleAttribute('hidden', !show);
     });
     // Warehouse pieces are not printed, so the scenes leave the Drevaunt print off them.
@@ -278,21 +311,25 @@
     const stageBox = document.createElement('span');
     stageBox.className = 'demo__group';
     const kindButtons = Object.keys(SAMPLE_ITEMS).map((k) => button(SAMPLE_ITEMS[k].label, () => show(stage, k)));
-    bar.replaceChildren(label('Sample order'), stageBox, label('/'), ...kindButtons);
+    let moment = -1;
+    const momentButtons = MOMENTS.map((m, i) => button('+' + (i + 1) + 'd', () => { moment = i; show(stage, key, i); }));
+    bar.replaceChildren(label('Sample order'), stageBox, label('waiting'), ...momentButtons, label('/'), ...kindButtons);
     bar.hidden = false;
 
-    function show(i, k) {
+    function show(i, k, m = -1) {
+      moment = m;
       const source = k === 'mixed' || SAMPLE_ITEMS[k].source === 'pod' ? 'pod' : 'stock';
       const labels = PART[source].stages('item');
-      stage = Math.min(i, labels.length - 1);
+      stage = m >= 0 ? labels.length - 2 : Math.min(i, labels.length - 1);
       key = k;
       stageBox.replaceChildren(...labels.map((st, j) => {
         const b = button(st.label, () => show(j, key));
-        b.setAttribute('aria-pressed', String(j === stage));
+        b.setAttribute('aria-pressed', String(j === stage && moment < 0));
         return b;
       }));
       kindButtons.forEach((b, j) => b.setAttribute('aria-pressed', String(Object.keys(SAMPLE_ITEMS)[j] === k)));
-      render(sampleOrder(stage, k), 0, stage);
+      momentButtons.forEach((b, j) => b.setAttribute('aria-pressed', String(j === moment)));
+      render(sampleOrder(stage + (moment >= 0 ? moment + 1 : 0), k), 0, stage, moment >= 0 ? moment : undefined);
       history.replaceState(null, '', '?stage=' + stage + '&kind=' + k);
     }
     show(stage, key);

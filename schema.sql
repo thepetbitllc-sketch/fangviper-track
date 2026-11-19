@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS orders (
   status      TEXT NOT NULL DEFAULT 'open',  -- open | shipped | canceled
   tracking    TEXT,                      -- JSON {carrier, number, url, shippedAt}
   emailed_at  TEXT,                      -- when the "being made" email went out
+  reminded_at TEXT,                      -- when the day-5 "it moved again" reminder went out
   email_error TEXT
 );
 CREATE INDEX IF NOT EXISTS orders_due ON orders (status, emailed_at, placed);
+-- Existing databases: ALTER TABLE orders ADD COLUMN reminded_at TEXT;

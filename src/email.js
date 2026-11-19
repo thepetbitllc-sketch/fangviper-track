@@ -1,4 +1,4 @@
-/* The "your order is underway" email, sent 24 hours after an order. White like drevaunt.com (ink #19110B, Jost);
+/* The "your order is underway" email, sent 24 hours after an order, and the "it moved again" reminder on day 5 if it has not shipped. White like drevaunt.com (ink #19110B, Jost);
    table layout so it holds up in Gmail and Outlook. Wording follows what the order holds: printed pieces
    (made to order), warehouse pieces (ready-made, packed and shipped) or both. */
 import { groupsOf } from './order.js';
@@ -34,12 +34,16 @@ function copyFor(groups, name) {
 
 const LABEL = { pod: 'Made for you', stock: 'From our warehouse' };
 
-export function renderEmail(row, env) {
+export function renderEmail(row, env, mode = 'first') {
   const groups = groupsOf(row);
   const link = `${env.SITE_URL}/?t=${encodeURIComponent(row.token)}`;
   const name = (row.first_name || '').trim();
   const placed = placedDate(row);
-  const { title, intro } = copyFor(groups, name);
+  const reminder = mode === 'reminder';
+  const { title, intro } = reminder
+    ? { title: 'Your order moved again', intro: `${name ? `Hey ${name}, your` : 'Your'} order has moved on since our last email, and there is a new step waiting on your page today. Tap below to see where it is now.` }
+    : copyFor(groups, name);
+  const cta = reminder ? "See today's step" : 'Follow your order';
   const subject = `${title.replace('Your order', `Your order ${row.number}`)}`;
   const labelled = groups.length > 1;
 
@@ -91,7 +95,7 @@ export function renderEmail(row, env) {
           ${esc(intro)}
         </td></tr>
         <tr><td align="center" class="pad" style="padding:30px 32px 0;">
-          <a href="${esc(link)}" style="display:inline-block;padding:15px 30px;border-radius:100px;background:${INK};font:500 13px/1 ${FONT};letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;text-decoration:none;">Follow your order</a>
+          <a href="${esc(link)}" style="display:inline-block;padding:15px 30px;border-radius:100px;background:${INK};font:500 13px/1 ${FONT};letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;text-decoration:none;">${esc(cta)}</a>
         </td></tr>
         <tr><td align="center" class="pad" style="padding:14px 32px 0;font:400 12px/1.6 ${FONT};color:${DIM};">
           A new step shows up every day until it leaves for your door.
@@ -116,7 +120,7 @@ export function renderEmail(row, env) {
     '',
     intro,
     '',
-    `Follow your order: ${link}`,
+    `${cta}: ${link}`,
     'A new step shows up every day until it leaves for your door.',
     '',
     'In this order:',

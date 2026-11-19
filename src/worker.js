@@ -1,7 +1,8 @@
 /* Drevaunt order tracking backend (Cloudflare Worker).
    - Shopify admin webhooks (orders/create, fulfillments/create|update, orders/cancelled) -> POST /webhooks/shopify
    - The tracking page in /public reads GET /api/order/<token>
-   - Every hour, orders that are EMAIL_DELAY_HOURS old get the "your order is underway" email (Resend).
+   - Every hour, orders that are EMAIL_DELAY_HOURS old get the "your order is underway" email (Resend),
+     and orders still not shipped after REMINDER_DAYS get one "it moved again" reminder.
    Printful items are made to order, Zendrop items ship from the warehouse; each part has its own progress (see order.js). */
 import { renderEmail } from './email.js';
 import { groupsOf, isPrintOnDemand, printKindOf, stockKindOf } from './order.js';
@@ -168,49 +169,57 @@ async function markShipped(f, env) {
   await env.DB.prepare('UPDATE orders SET tracking = ?, status = ? WHERE id = ?').bind(JSON.stringify(tracking), status, String(f.order_id)).run();
 }
 
-/* ---------- the delayed "your order is underway" email ---------- */
+/* ---------- the emails: "underway" after 24 hours, "moved again" on day 5 ---------- */
 
+// Hourly: first email for orders EMAIL_DELAY_HOURS old, reminder for orders REMINDER_DAYS old that still have not
+// fully shipped (Shopify's shipping email tells customers more once they have).
 async function sendDueEmails(env, delayHours) {
   const now = Date.now();
-  const due = new Date(now - delayHours * HOUR).toISOString();
-  const tooOld = new Date(now - 7 * 24 * HOUR).toISOString(); // never email about week-old orders
-  // Fully shipped orders are skipped: Shopify's shipping email has already told the customer more.
-  const { results } = await env.DB.prepare(
+  const tooOld = new Date(now - 14 * 24 * HOUR).toISOString(); // never email about orders older than two weeks
+  const firstDue = new Date(now - delayHours * HOUR).toISOString();
+  const reminderDue = new Date(now - Number(env.REMINDER_DAYS || 5) * 24 * HOUR).toISOString();
+
+  const first = (await env.DB.prepare(
     `SELECT * FROM orders WHERE status = 'open' AND emailed_at IS NULL AND email IS NOT NULL
      AND email NOT LIKE '%@example.com' AND placed <= ? AND placed >= ? ORDER BY placed LIMIT 50`
-  ).bind(due, tooOld).all();
+  ).bind(firstDue, new Date(now - 7 * 24 * HOUR).toISOString()).all()).results;
+  const reminders = (await env.DB.prepare(
+    `SELECT * FROM orders WHERE status = 'open' AND emailed_at IS NOT NULL AND reminded_at IS NULL AND email IS NOT NULL
+     AND email NOT LIKE '%@example.com' AND placed <= ? AND placed >= ? ORDER BY placed LIMIT 50`
+  ).bind(reminderDue, tooOld).all()).results;
 
-  const report = { due: results.length, sent: [], failed: [], dryRun: [] };
-  for (const row of results) {
-    const mail = renderEmail(row, env);
-    if (!env.RESEND_API_KEY) { report.dryRun.push(row.number); continue; }
+  const report = { due: first.length, reminders: reminders.length, sent: [], failed: [], dryRun: [] };
+  for (const [rows, mode, column] of [[first, 'first', 'emailed_at'], [reminders, 'reminder', 'reminded_at']]) {
+    for (const row of rows) {
+      const mail = renderEmail(row, env, mode);
+      if (!env.RESEND_API_KEY) { report.dryRun.push(`${row.number} ${mode}`); continue; }
 
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'content-type': 'application/json',
-        // One key per order per hour: stops double sends inside a run, but a failed send can retry next hour.
-        'idempotency-key': `being-made-${row.id}-${new Date().toISOString().slice(0, 13)}`
-      },
-      body: JSON.stringify({ from: env.MAIL_FROM, to: [row.email], reply_to: env.MAIL_REPLY_TO, subject: mail.subject, html: mail.html, text: mail.text })
-    });
-    if (res.ok) {
-      await env.DB.prepare('UPDATE orders SET emailed_at = ?, email_error = NULL WHERE id = ?').bind(new Date().toISOString(), row.id).run();
-      report.sent.push(row.number);
-    } else {
-      const msg = (await res.text()).slice(0, 300);
-      await env.DB.prepare('UPDATE orders SET email_error = ? WHERE id = ?').bind(`${res.status} ${msg}`, row.id).run();
-      report.failed.push(row.number);
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${env.RESEND_API_KEY}`,
+          'content-type': 'application/json',
+          // One key per order, email and hour: stops double sends inside a run, but a failed send can retry next hour.
+          'idempotency-key': `${mode === 'first' ? 'being-made' : 'reminder'}-${row.id}-${new Date().toISOString().slice(0, 13)}`
+        },
+        body: JSON.stringify({ from: env.MAIL_FROM, to: [row.email], reply_to: env.MAIL_REPLY_TO, subject: mail.subject, html: mail.html, text: mail.text })
+      });
+      if (res.ok) {
+        await env.DB.prepare(`UPDATE orders SET ${column} = ?, email_error = NULL WHERE id = ?`).bind(new Date().toISOString(), row.id).run();
+        report.sent.push(`${row.number} ${mode}`);
+      } else {
+        const msg = (await res.text()).slice(0, 300);
+        await env.DB.prepare('UPDATE orders SET email_error = ? WHERE id = ?').bind(`${mode} ${res.status} ${msg}`, row.id).run();
+        report.failed.push(`${row.number} ${mode}`);
+      }
     }
   }
   return report;
 }
-
 async function devEmail(url, env) {
   const row = await env.DB.prepare('SELECT * FROM orders WHERE token = ?').bind(url.searchParams.get('t') || '').first();
   if (!row) return new Response('No order with that token', { status: 404 });
-  const mail = renderEmail(row, env);
+  const mail = renderEmail(row, env, url.searchParams.get('mode') || 'first');
   return new Response(url.searchParams.has('text') ? mail.text : mail.html, {
     headers: { 'content-type': url.searchParams.has('text') ? 'text/plain; charset=utf-8' : 'text/html; charset=utf-8' }
   });
