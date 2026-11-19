@@ -16,7 +16,7 @@
     "STORE_URL": "https://drevaunt.com",
     // Sent through Resend from the verified updates.drevaunt.com subdomain; replies go to MAIL_REPLY_TO.
     "MAIL_FROM": "Drevaunt <orders@updates.drevaunt.com>",
-    "MAIL_REPLY_TO": "contact@fangviper.com",
+    "MAIL_REPLY_TO": "support@drevaunt.com",
     "EMAIL_DELAY_HOURS": "24",
     // A second email on this day if the order still has not shipped, pointing to that day's new step.
     "REMINDER_DAYS": "5"
